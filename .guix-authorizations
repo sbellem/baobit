@@ -1,5 +1,5 @@
 ;; -*- mode: scheme; -*-
-;; Authorized signers for baochan channel
+;; Authorized signers for baobit channel
 
 (authorizations
  (version 0)

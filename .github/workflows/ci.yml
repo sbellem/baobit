@@ -1,0 +1,200 @@
+name: Test the baobit guix channel
+
+on:
+  push:
+    branches: [main, ci*]
+    tags: ['v*', 'xous-core-*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Dry-run: validates all package definitions (fast)
+  dry-run:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Dry-run all packages
+        run: |
+          make DRY=1 SUBS=official CHANNELS=${{ matrix.channels }} \
+            rv32imac-none rv32imac-xous toolchain \
+            boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec
+
+  # Full build: sequential steps share Guix store
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      # Toolchain builds (rust-1.90 from rust-team has substitutes)
+      - name: Build rv32imac-none
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=sysroot-none-elf rv32imac-none
+
+      - name: Build rv32imac-xous
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=sysroot-xous-elf rv32imac-xous
+
+      - name: Build toolchain
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=rust-xous toolchain
+
+      # Firmware builds
+      - name: Build boot0
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot0 boot0
+
+      - name: Build boot1
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot1 boot1
+
+      - name: Build alt-boot1
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=bao1x-alt-boot1 alt-boot1
+
+      - name: Build baremetal-dabao
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=bao1x-baremetal-dabao baremetal-dabao
+
+      - name: Build dabao
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=dabao dabao
+
+      - name: Build dabao-helloworld
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=dabao-helloworld dabao-helloworld
+
+      - name: Build baosec
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=baosec baosec
+
+      # Determinism checks
+      - name: Check determinism boot0
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 boot0
+
+      - name: Check determinism boot1
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 boot1
+
+      - name: Check determinism alt-boot1
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 alt-boot1
+
+      - name: Check determinism baremetal-dabao
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 baremetal-dabao
+
+      - name: Check determinism dabao
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 dabao
+
+      - name: Check determinism dabao-helloworld
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 dabao-helloworld
+
+      - name: Check determinism baosec
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 baosec
+
+      # Summary and artifacts
+      - name: Reproducibility summary
+        if: always()
+        run: |
+          echo "## Baobit Builds (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Toolchain Store Paths" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "sysroot-none-elf: $(readlink -f sysroot-none-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "sysroot-xous-elf: $(readlink -f sysroot-xous-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-xous: $(readlink -f rust-xous 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Firmware Store Paths" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "bao1x-boot0: $(readlink -f bao1x-boot0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "bao1x-boot1: $(readlink -f bao1x-boot1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "bao1x-alt-boot1: $(readlink -f bao1x-alt-boot1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "bao1x-baremetal-dabao: $(readlink -f bao1x-baremetal-dabao 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "dabao: $(readlink -f dabao 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "dabao-helloworld: $(readlink -f dabao-helloworld 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "baosec: $(readlink -f baosec 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          for pkg in bao1x-boot0 bao1x-boot1 bao1x-alt-boot1 bao1x-baremetal-dabao dabao dabao-helloworld baosec; do
+            for f in "$pkg"/*.uf2 "$pkg"/*.img "$pkg"/*.bin; do
+              [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+            done
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          for pkg in bao1x-boot0 bao1x-boot1 bao1x-alt-boot1 bao1x-baremetal-dabao dabao dabao-helloworld baosec; do
+            cp $pkg/*.uf2 artifacts/ 2>/dev/null || true
+            cp $pkg/*.img artifacts/ 2>/dev/null || true
+            cp $pkg/*.bin artifacts/ 2>/dev/null || true
+          done
+          ls -la artifacts/ || echo "No artifacts found"
+
+      - name: Export toolchain nars
+        if: success()
+        run: |
+          mkdir -p nars/toolchain
+          for pkg in sysroot-none-elf sysroot-xous-elf rust-xous; do
+            if [ -L "$pkg" ]; then
+              store_path=$(readlink -f "$pkg")
+              if [ -d "$store_path" ]; then
+                guix archive --export "$store_path" | gzip > "nars/toolchain/${pkg}.nar.gz"
+              fi
+            fi
+          done
+          ls -la nars/toolchain/ || echo "No toolchain nars found"
+
+      - name: Export firmware nars
+        if: success()
+        run: |
+          mkdir -p nars/firmware
+          for pkg in bao1x-boot0 bao1x-boot1 bao1x-alt-boot1 bao1x-baremetal-dabao dabao dabao-helloworld baosec; do
+            store_path=$(readlink -f $pkg 2>/dev/null)
+            if [ -n "$store_path" ] && [ -d "$store_path" ]; then
+              guix archive --export $store_path | gzip > nars/firmware/${pkg}.nar.gz
+            fi
+          done
+          ls -la nars/firmware/ || echo "No firmware nars found"
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baochip-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
+
+      - name: Upload toolchain nars
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-toolchain-nars-${{ matrix.channels }}
+          path: nars/toolchain/
+          if-no-files-found: warn
+
+      - name: Upload firmware nars
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baochip-nars-${{ matrix.channels }}
+          path: nars/firmware/
+          if-no-files-found: warn
