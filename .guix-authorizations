@@ -1,0 +1,7 @@
+;; -*- mode: scheme; -*-
+;; Authorized signers for baochan channel
+
+(authorizations
+ (version 0)
+ (("E39D 2B3D 0564 BA43 7BD9  2756 C38A E0EC CAB7 D5C8"
+   (name "gluonix"))))
