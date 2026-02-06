@@ -54,6 +54,21 @@ jobs:
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (rust-xous) rust-xous)' --dry-run
 
+      - name: Dry-run firmware-bao1x-boot0
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-boot0)' --dry-run
+
+      - name: Dry-run firmware-dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-dabao)' --dry-run
+
+      - name: Dry-run firmware-bootloader
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bootloader)' --dry-run
+
   # Full build: sequential steps share Guix store, deps only build once
   build:
     #if: github.ref == 'refs/heads/main'
@@ -101,3 +116,60 @@ jobs:
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (rust-xous) rust-xous)'
+
+      - name: Build firmware-bao1x-boot0
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-boot0)' --root=firmware-boot0
+
+      - name: Build firmware-dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-dabao)' --root=firmware-dabao
+
+      - name: Build firmware-bootloader
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bootloader)' --root=firmware-bootloader
+
+      - name: Check determinism firmware-bao1x-boot0
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-boot0)' --check
+
+      - name: Check determinism firmware-dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-dabao)' --check
+
+      - name: Reproducibility summary
+        if: always()
+        run: |
+          echo "## Firmware Builds (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Paths" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "boot0: $(readlink -f firmware-boot0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "dabao: $(readlink -f firmware-dabao 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "bootloader: $(readlink -f firmware-bootloader 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp firmware-boot0/*.uf2 artifacts/ 2>/dev/null || true
+          cp firmware-boot0/*.bin artifacts/ 2>/dev/null || true
+          cp firmware-dabao/*.uf2 artifacts/ 2>/dev/null || true
+          cp firmware-dabao/*.img artifacts/ 2>/dev/null || true
+          cp firmware-bootloader/*.uf2 artifacts/ 2>/dev/null || true
+          cp firmware-bootloader/*.bin artifacts/ 2>/dev/null || true
+          ls -la artifacts/ || echo "No artifacts found"
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
