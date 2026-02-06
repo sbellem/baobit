@@ -1,0 +1,103 @@
+name: Test the baochan guix channel
+
+on:
+  push:
+    branches: [main, ci*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Dry-run: validates all package definitions
+  dry-run:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Dry-run rust-1.91
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.91)' --dry-run
+
+      - name: Dry-run rust-1.92
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.92)' --dry-run
+
+      - name: Dry-run rust-1.93
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.93)' --dry-run
+
+      - name: Dry-run bare-metal sysroot
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages \
+            -e '(@ (rust-riscv32imac-none-elf) rust-sysroot-riscv32imac-none-elf)' --dry-run
+
+      - name: Dry-run xous-sysroot
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust-riscv32imac-xous-elf) xous-sysroot)' --dry-run
+
+      - name: Dry-run rust-xous
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust-xous) rust-xous)' --dry-run
+
+  # Full build: sequential steps share Guix store, deps only build once
+  build:
+    #if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Build rust-1.91
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.91)'
+
+      - name: Build rust-1.92
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.92)'
+
+      - name: Build rust-1.93
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.93)'
+
+      - name: Build riscv32imac-unknown-none-elf
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages \
+            -e '(@ (rust-riscv32imac-none-elf) rust-sysroot-riscv32imac-none-elf)'
+
+      - name: Build riscv32imac-unknown-xous-elf
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust-riscv32imac-xous-elf) xous-sysroot)'
+
+      - name: Build rust-xous
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust-xous) rust-xous)'
