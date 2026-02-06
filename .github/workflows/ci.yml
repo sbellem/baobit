@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  # Dry-run: validates all package definitions
+  # Dry-run: validates all package definitions (fast)
   dry-run:
     runs-on: ubuntu-latest
     strategy:
@@ -23,6 +23,7 @@ jobs:
           version: "1.5.0"
           pullAfterInstall: false
 
+      # Toolchain
       - name: Dry-run rust-1.91
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
@@ -54,24 +55,39 @@ jobs:
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (rust-xous) rust-xous)' --dry-run
 
+      # Firmware
       - name: Dry-run firmware-bao1x-boot0
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (firmware) firmware-bao1x-boot0)' --dry-run
+
+      - name: Dry-run firmware-bao1x-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-boot1)' --dry-run
+
+      - name: Dry-run firmware-bao1x-alt-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-alt-boot1)' --dry-run
+
+      - name: Dry-run firmware-bao1x-baremetal-dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-baremetal-dabao)' --dry-run
 
       - name: Dry-run firmware-dabao
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (firmware) firmware-dabao)' --dry-run
 
-      - name: Dry-run firmware-bootloader
+      - name: Dry-run firmware-baosec
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (firmware) firmware-bootloader)' --dry-run
+            -- build -L packages -e '(@ (firmware) firmware-baosec)' --dry-run
 
-  # Full build: sequential steps share Guix store, deps only build once
+  # Full build: sequential steps share Guix store
   build:
-    #if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -86,6 +102,7 @@ jobs:
           version: "1.5.0"
           pullAfterInstall: false
 
+      # Toolchain
       - name: Build rust-1.91
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
@@ -101,13 +118,13 @@ jobs:
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (rust) rust-1.93)'
 
-      - name: Build riscv32imac-unknown-none-elf
+      - name: Build bare-metal sysroot
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages \
             -e '(@ (rust-riscv32imac-none-elf) rust-sysroot-riscv32imac-none-elf)'
 
-      - name: Build riscv32imac-unknown-xous-elf
+      - name: Build xous-sysroot
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (rust-riscv32imac-xous-elf) xous-sysroot)'
@@ -117,31 +134,69 @@ jobs:
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (rust-xous) rust-xous)'
 
+      # Firmware
       - name: Build firmware-bao1x-boot0
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (firmware) firmware-bao1x-boot0)' --root=firmware-boot0
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-boot0)' --root=firmware-bao1x-boot0
+
+      - name: Build firmware-bao1x-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-boot1)' --root=firmware-bao1x-boot1
+
+      - name: Build firmware-bao1x-alt-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-alt-boot1)' --root=firmware-bao1x-alt-boot1
+
+      - name: Build firmware-bao1x-baremetal-dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-baremetal-dabao)' --root=firmware-bao1x-baremetal-dabao
 
       - name: Build firmware-dabao
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (firmware) firmware-dabao)' --root=firmware-dabao
 
-      - name: Build firmware-bootloader
+      - name: Build firmware-baosec
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (firmware) firmware-bootloader)' --root=firmware-bootloader
+            -- build -L packages -e '(@ (firmware) firmware-baosec)' --root=firmware-baosec
 
+      # Determinism checks
       - name: Check determinism firmware-bao1x-boot0
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (firmware) firmware-bao1x-boot0)' --check
+
+      - name: Check determinism firmware-bao1x-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-boot1)' --check
+
+      - name: Check determinism firmware-bao1x-alt-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-alt-boot1)' --check
+
+      - name: Check determinism firmware-bao1x-baremetal-dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-bao1x-baremetal-dabao)' --check
 
       - name: Check determinism firmware-dabao
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (firmware) firmware-dabao)' --check
 
+      - name: Check determinism firmware-baosec
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (firmware) firmware-baosec)' --check
+
+      # Summary and artifacts
       - name: Reproducibility summary
         if: always()
         run: |
@@ -149,21 +204,23 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Paths" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "boot0: $(readlink -f firmware-boot0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "boot0: $(readlink -f firmware-bao1x-boot0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "boot1: $(readlink -f firmware-bao1x-boot1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "alt-boot1: $(readlink -f firmware-bao1x-alt-boot1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "baremetal-dabao: $(readlink -f firmware-bao1x-baremetal-dabao 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "dabao: $(readlink -f firmware-dabao 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "bootloader: $(readlink -f firmware-bootloader 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "baosec: $(readlink -f firmware-baosec 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Copy artifacts
         if: success()
         run: |
           mkdir -p artifacts
-          cp firmware-boot0/*.uf2 artifacts/ 2>/dev/null || true
-          cp firmware-boot0/*.bin artifacts/ 2>/dev/null || true
-          cp firmware-dabao/*.uf2 artifacts/ 2>/dev/null || true
-          cp firmware-dabao/*.img artifacts/ 2>/dev/null || true
-          cp firmware-bootloader/*.uf2 artifacts/ 2>/dev/null || true
-          cp firmware-bootloader/*.bin artifacts/ 2>/dev/null || true
+          for pkg in firmware-bao1x-boot0 firmware-bao1x-boot1 firmware-bao1x-alt-boot1 firmware-bao1x-baremetal-dabao firmware-dabao firmware-baosec; do
+            cp $pkg/*.uf2 artifacts/ 2>/dev/null || true
+            cp $pkg/*.img artifacts/ 2>/dev/null || true
+            cp $pkg/*.bin artifacts/ 2>/dev/null || true
+          done
           ls -la artifacts/ || echo "No artifacts found"
 
       - name: Upload artifacts
