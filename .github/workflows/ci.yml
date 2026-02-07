@@ -221,9 +221,12 @@ jobs:
 
           echo "### Toolchain Store Paths" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.91: $(readlink -f rust-1.91 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.92: $(readlink -f rust-1.92 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.93: $(readlink -f rust-1.93 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.91-0 (cargo): $(readlink -f rust-1.91-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.91-1 (rustc): $(readlink -f rust-1.91-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.92-0 (cargo): $(readlink -f rust-1.92-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.92-1 (rustc): $(readlink -f rust-1.92-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.93-0 (cargo): $(readlink -f rust-1.93-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.93-1 (rustc): $(readlink -f rust-1.93-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "sysroot-none-elf: $(readlink -f sysroot-none-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "sysroot-xous-elf: $(readlink -f sysroot-xous-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "rust-xous: $(readlink -f rust-xous 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
@@ -268,10 +271,12 @@ jobs:
         if: success()
         run: |
           mkdir -p nars/toolchain
-          for pkg in rust-1.91 rust-1.92 rust-1.93 sysroot-none-elf sysroot-xous-elf rust-xous; do
-            store_path=$(readlink -f $pkg 2>/dev/null)
-            if [ -n "$store_path" ] && [ -d "$store_path" ]; then
-              guix archive --export $store_path | gzip > nars/toolchain/${pkg}.nar.gz
+          for pkg in rust-1.91-0 rust-1.91-1 rust-1.92-0 rust-1.92-1 rust-1.93-0 rust-1.93-1 sysroot-none-elf sysroot-xous-elf rust-xous; do
+            if [ -L "$pkg" ]; then
+              store_path=$(readlink -f "$pkg")
+              if [ -d "$store_path" ]; then
+                guix archive --export "$store_path" | gzip > "nars/toolchain/${pkg}.nar.gz"
+              fi
             fi
           done
           ls -la nars/toolchain/ || echo "No toolchain nars found"
