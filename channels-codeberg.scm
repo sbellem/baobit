@@ -1,4 +1,4 @@
-;; Channels configuration for baochan (Codeberg mirror)
+;; Channels configuration for baobit (Codeberg mirror)
 ;; Fallback when Savannah is unavailable
 
 (list

@@ -1,4 +1,4 @@
-name: Test the baochan guix channel
+name: Test the baobit guix channel
 
 on:
   push:
