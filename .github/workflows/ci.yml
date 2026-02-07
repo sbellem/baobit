@@ -263,10 +263,50 @@ jobs:
           done
           ls -la artifacts/ || echo "No artifacts found"
 
+      - name: Export toolchain nars
+        if: success()
+        run: |
+          mkdir -p nars/toolchain
+          for pkg in rust-1.91 rust-1.92 rust-1.93 sysroot-none-elf sysroot-xous-elf rust-xous; do
+            store_path=$(readlink -f $pkg 2>/dev/null)
+            if [ -n "$store_path" ] && [ -d "$store_path" ]; then
+              guix archive --export $store_path | gzip > nars/toolchain/${pkg}.nar.gz
+            fi
+          done
+          ls -la nars/toolchain/ || echo "No toolchain nars found"
+
+      - name: Export firmware nars
+        if: success()
+        run: |
+          mkdir -p nars/firmware
+          for pkg in bao1x-boot0 bao1x-boot1 bao1x-alt-boot1 bao1x-baremetal-dabao dabao dabao-helloworld baosec; do
+            store_path=$(readlink -f $pkg 2>/dev/null)
+            if [ -n "$store_path" ] && [ -d "$store_path" ]; then
+              guix archive --export $store_path | gzip > nars/firmware/${pkg}.nar.gz
+            fi
+          done
+          ls -la nars/firmware/ || echo "No firmware nars found"
+
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: baochip-${{ matrix.channels }}
           path: artifacts/
+          if-no-files-found: warn
+
+      - name: Upload toolchain nars
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-toolchain-nars-${{ matrix.channels }}
+          path: nars/toolchain/
+          if-no-files-found: warn
+
+      - name: Upload firmware nars
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baochip-nars-${{ matrix.channels }}
+          path: nars/firmware/
           if-no-files-found: warn
