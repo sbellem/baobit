@@ -111,33 +111,33 @@ jobs:
       - name: Build rust-1.91
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust) rust-1.91)'
+            -- build -L packages -e '(@ (rust) rust-1.91)' --root=rust-1.91
 
       - name: Build rust-1.92
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust) rust-1.92)'
+            -- build -L packages -e '(@ (rust) rust-1.92)' --root=rust-1.92
 
       - name: Build rust-1.93
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust) rust-1.93)'
+            -- build -L packages -e '(@ (rust) rust-1.93)' --root=rust-1.93
 
       - name: Build bare-metal sysroot
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages \
-            -e '(@ (rust-riscv32imac-none-elf) rust-sysroot-riscv32imac-none-elf)'
+            -e '(@ (rust-riscv32imac-none-elf) rust-sysroot-riscv32imac-none-elf)' --root=sysroot-none-elf
 
       - name: Build xous-sysroot
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust-riscv32imac-xous-elf) xous-sysroot)'
+            -- build -L packages -e '(@ (rust-riscv32imac-xous-elf) xous-sysroot)' --root=sysroot-xous-elf
 
       - name: Build rust-xous
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust-xous) rust-xous)'
+            -- build -L packages -e '(@ (rust-xous) rust-xous)' --root=rust-xous
 
       # Firmware
       - name: Build bao1x-boot0
@@ -215,9 +215,21 @@ jobs:
       - name: Reproducibility summary
         if: always()
         run: |
-          echo "## Baochip Builds (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## Baobit Builds (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Store Paths" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Toolchain Store Paths" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.91: $(readlink -f rust-1.91 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.92: $(readlink -f rust-1.92 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.93: $(readlink -f rust-1.93 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "sysroot-none-elf: $(readlink -f sysroot-none-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "sysroot-xous-elf: $(readlink -f sysroot-xous-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-xous: $(readlink -f rust-xous 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Firmware Store Paths" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "bao1x-boot0: $(readlink -f bao1x-boot0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "bao1x-boot1: $(readlink -f bao1x-boot1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
@@ -226,6 +238,18 @@ jobs:
           echo "dabao: $(readlink -f dabao 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "dabao-helloworld: $(readlink -f dabao-helloworld 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "baosec: $(readlink -f baosec 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          for pkg in bao1x-boot0 bao1x-boot1 bao1x-alt-boot1 bao1x-baremetal-dabao dabao dabao-helloworld baosec; do
+            for ext in uf2 img bin; do
+              for f in $pkg/*.$ext 2>/dev/null; do
+                [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+              done
+            done
+          done
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Copy artifacts
