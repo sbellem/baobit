@@ -29,13 +29,13 @@
 ;;; =============================================================
 
 ;; Git commit hash for xous-core (full 40 chars)
-(define %xous-commit "55d44bd947ad1b4bbe58e965dd4834c7706b19d3")
+(define %xous-commit "24b7d0bf52db1353cceac6221ab6dab1e9979243")
 
 ;; SHA256 hash of the git checkout (get with: guix hash -rx <checkout>)
-(define %xous-hash "1vnmqizjn5w719lrxzaq2h6hm9gifp0ci9vhgxrsr02axp9x7dng")
+(define %xous-hash "1ydgp4xhpl8yp33xaqqrf4qa09r8bhnskw80cikxjf7akl627zl8")
 
 ;; Version string (e.g., "v0.9.16-0-gabcd1234" or just "v0.9.16")
-;; v0.9.16-2719-g55d44bd94
+;; v0.9.16-2729-g24b7d0bf5
 (define %xous-version "0.9.16")
 
 ;; Short hash for display (first 8 chars of commit)
