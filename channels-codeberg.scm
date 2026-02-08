@@ -6,7 +6,7 @@
   (name 'guix)
   (url "https://codeberg.org/guix/guix.git")
   (branch "rust-team")
-  (commit "71f6e64afaa580a99aaea67ffd39bd4a40a8293d")
+  (commit "bb39e69d3865da3745b107fac95ae0e7087f529a")
   (introduction
     (make-channel-introduction
       "9edb3f66fd807b096b48283debdcddccfea34bad"
