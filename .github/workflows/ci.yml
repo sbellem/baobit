@@ -24,73 +24,12 @@ jobs:
           version: "1.5.0"
           pullAfterInstall: false
 
-      # Toolchain
-      - name: Dry-run rust-1.91
+      - name: Dry-run all packages
         run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust) rust-1.91)' --dry-run
-
-      - name: Dry-run rust-1.92
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust) rust-1.92)' --dry-run
-
-      - name: Dry-run rust-1.93
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust) rust-1.93)' --dry-run
-
-      - name: Dry-run rust-sysroot-riscv32imac-none-elf
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages \
-            -e '(@ (embedded) rust-sysroot-riscv32imac-none-elf)' --dry-run
-
-      - name: Dry-run rust-sysroot-riscv32imac-xous-elf
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust-xous-toolchain) rust-sysroot-riscv32imac-xous-elf)' --dry-run
-
-      - name: Dry-run rust-xous-toolchain
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust-xous-toolchain) rust-xous-toolchain)' --dry-run
-
-      # Firmware
-      - name: Dry-run bao1x-boot0
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-boot0)' --dry-run
-
-      - name: Dry-run bao1x-boot1
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-boot1)' --dry-run
-
-      - name: Dry-run bao1x-alt-boot1
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-alt-boot1)' --dry-run
-
-      - name: Dry-run bao1x-baremetal-dabao
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-baremetal-dabao)' --dry-run
-
-      - name: Dry-run dabao
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) dabao)' --dry-run
-
-      - name: Dry-run dabao-helloworld
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) dabao-helloworld)' --dry-run
-
-      - name: Dry-run baosec
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) baosec)' --dry-run
+          make DRY=1 SUBS= CHANNELS=${{ matrix.channels }} \
+            rust-1.91 rust-1.92 rust-1.93 \
+            rv32imac-none rv32imac-xous toolchain \
+            boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec
 
   # Full build: sequential steps share Guix store
   build:
@@ -108,109 +47,68 @@ jobs:
           version: "1.5.0"
           pullAfterInstall: false
 
-      # Toolchain
+      # Toolchain builds (no substitutes)
       - name: Build rust-1.91
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust) rust-1.91)' --root=rust-1.91
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=rust-1.91 rust-1.91
 
       - name: Build rust-1.92
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust) rust-1.92)' --root=rust-1.92
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=rust-1.92 rust-1.92
 
       - name: Build rust-1.93
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust) rust-1.93)' --root=rust-1.93
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=rust-1.93 rust-1.93
 
-      - name: Build rust-sysroot-riscv32imac-none-elf
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages \
-            -e '(@ (embedded) rust-sysroot-riscv32imac-none-elf)' --root=sysroot-none-elf
+      - name: Build rv32imac-none
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=sysroot-none-elf rv32imac-none
 
-      - name: Build rust-sysroot-riscv32imac-xous-elf
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust-xous-toolchain) rust-sysroot-riscv32imac-xous-elf)' --root=sysroot-xous-elf
+      - name: Build rv32imac-xous
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=sysroot-xous-elf rv32imac-xous
 
-      - name: Build rust-xous-toolchain
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust-xous-toolchain) rust-xous-toolchain)' --root=rust-xous
+      - name: Build toolchain
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=rust-xous toolchain
 
-      # Firmware
-      - name: Build bao1x-boot0
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-boot0)' --root=bao1x-boot0
+      # Firmware builds
+      - name: Build boot0
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot0 boot0
 
-      - name: Build bao1x-boot1
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-boot1)' --root=bao1x-boot1
+      - name: Build boot1
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot1 boot1
 
-      - name: Build bao1x-alt-boot1
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-alt-boot1)' --root=bao1x-alt-boot1
+      - name: Build alt-boot1
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=bao1x-alt-boot1 alt-boot1
 
-      - name: Build bao1x-baremetal-dabao
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-baremetal-dabao)' --root=bao1x-baremetal-dabao
+      - name: Build baremetal-dabao
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=bao1x-baremetal-dabao baremetal-dabao
 
       - name: Build dabao
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) dabao)' --root=dabao
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=dabao dabao
 
       - name: Build dabao-helloworld
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) dabao-helloworld)' --root=dabao-helloworld
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=dabao-helloworld dabao-helloworld
 
       - name: Build baosec
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) baosec)' --root=baosec
+        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=baosec baosec
 
       # Determinism checks
-      - name: Check determinism bao1x-boot0
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-boot0)' --check
+      - name: Check determinism boot0
+        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 boot0
 
-      - name: Check determinism bao1x-boot1
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-boot1)' --check
+      - name: Check determinism boot1
+        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 boot1
 
-      - name: Check determinism bao1x-alt-boot1
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-alt-boot1)' --check
+      - name: Check determinism alt-boot1
+        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 alt-boot1
 
-      - name: Check determinism bao1x-baremetal-dabao
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) bao1x-baremetal-dabao)' --check
+      - name: Check determinism baremetal-dabao
+        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 baremetal-dabao
 
       - name: Check determinism dabao
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) dabao)' --check
+        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 dabao
 
       - name: Check determinism dabao-helloworld
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) dabao-helloworld)' --check
+        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 dabao-helloworld
 
       - name: Check determinism baosec
-        run: |
-          guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (bao) baosec)' --check
+        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 baosec
 
       # Summary and artifacts
       - name: Reproducibility summary

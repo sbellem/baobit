@@ -9,13 +9,27 @@
 #
 #   CHANNELS=channels-codeberg.scm make toolchain
 #   make rv32imac-none DRY=1
+#   make boot0 SUBS="https://guix.baobit.one" ROOT=boot0
+#   make boot0 CHECK=1
 
 CHANNELS ?= channels.scm
 DRY ?=
+SUBS ?= https://guix.baobit.one https://ci.guix.gnu.org https://bordeaux.guix.gnu.org
+ROOT ?=
+CHECK ?=
 
 TM := guix time-machine --channels=$(CHANNELS) -- build -L packages
 ifdef DRY
   TM += --dry-run
+endif
+ifdef SUBS
+  TM += --substitute-urls="$(SUBS)"
+endif
+ifdef ROOT
+  TM += --root=$(ROOT)
+endif
+ifdef CHECK
+  TM += --check
 endif
 
 .PHONY: help rust-1.91 rust-1.92 rust-1.93 \
@@ -32,11 +46,15 @@ help:
 	@echo "    rv32imac-xous    - xous sysroot"
 	@echo "    toolchain        - rust-xous-toolchain (both sysroots)"
 	@echo "  Firmware:"
-	@echo "    boot0 boot1 dabao baosec"
+	@echo "    boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec"
 	@echo ""
 	@echo "Options:"
 	@echo "  CHANNELS=file.scm  - use different channels file"
 	@echo "  DRY=1              - dry-run only"
+	@echo "  SUBS='url ...'     - substitute URLs (default: guix.baobit.one + official)"
+	@echo "  SUBS=              - disable substitutes"
+	@echo "  ROOT=name          - create GC root with given name"
+	@echo "  CHECK=1            - verify reproducibility"
 
 # Rust versions
 rust-1.91:
