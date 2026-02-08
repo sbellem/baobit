@@ -40,21 +40,21 @@ jobs:
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (rust) rust-1.93)' --dry-run
 
-      - name: Dry-run bare-metal sysroot
+      - name: Dry-run rust-sysroot-riscv32imac-none-elf
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages \
-            -e '(@ (rust-riscv32imac-none-elf) rust-sysroot-riscv32imac-none-elf)' --dry-run
+            -e '(@ (embedded) rust-sysroot-riscv32imac-none-elf)' --dry-run
 
-      - name: Dry-run xous-sysroot
+      - name: Dry-run rust-sysroot-riscv32imac-xous-elf
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust-riscv32imac-xous-elf) xous-sysroot)' --dry-run
+            -- build -L packages -e '(@ (rust-xous-toolchain) rust-sysroot-riscv32imac-xous-elf)' --dry-run
 
-      - name: Dry-run rust-xous
+      - name: Dry-run rust-xous-toolchain
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust-xous) rust-xous)' --dry-run
+            -- build -L packages -e '(@ (rust-xous-toolchain) rust-xous-toolchain)' --dry-run
 
       # Firmware
       - name: Dry-run bao1x-boot0
@@ -124,21 +124,21 @@ jobs:
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages -e '(@ (rust) rust-1.93)' --root=rust-1.93
 
-      - name: Build bare-metal sysroot
+      - name: Build rust-sysroot-riscv32imac-none-elf
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
             -- build -L packages \
-            -e '(@ (rust-riscv32imac-none-elf) rust-sysroot-riscv32imac-none-elf)' --root=sysroot-none-elf
+            -e '(@ (embedded) rust-sysroot-riscv32imac-none-elf)' --root=sysroot-none-elf
 
-      - name: Build xous-sysroot
+      - name: Build rust-sysroot-riscv32imac-xous-elf
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust-riscv32imac-xous-elf) xous-sysroot)' --root=sysroot-xous-elf
+            -- build -L packages -e '(@ (rust-xous-toolchain) rust-sysroot-riscv32imac-xous-elf)' --root=sysroot-xous-elf
 
-      - name: Build rust-xous
+      - name: Build rust-xous-toolchain
         run: |
           guix time-machine --channels=${{ matrix.channels }} \
-            -- build -L packages -e '(@ (rust-xous) rust-xous)' --root=rust-xous
+            -- build -L packages -e '(@ (rust-xous-toolchain) rust-xous-toolchain)' --root=rust-xous
 
       # Firmware
       - name: Build bao1x-boot0

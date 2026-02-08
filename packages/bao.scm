@@ -21,7 +21,7 @@
   #:use-module (gnu packages version-control)
   #:use-module (gnu packages commencement)
   #:use-module (srfi srfi-1)
-  #:use-module (rust-xous)
+  #:use-module (rust-xous-toolchain)
   #:use-module (bao-crates))
 
 ;;; =============================================================
@@ -335,8 +335,8 @@
                     (find-files target-path pattern)))
                  '("\\.uf2$" "\\.img$" "\\.bin$"))))))))
     (native-inputs
-     `(("rust-xous" ,rust-xous)
-       ;; lld-18 and cross-binutils are propagated from rust-xous sysroots
+     `(("rust-xous" ,rust-xous-toolchain)
+       ;; lld-18 and cross-binutils are propagated from rust-xous-toolchain sysroots
        ("git" ,git)
        ("tar" ,tar)
        ("gzip" ,gzip)
