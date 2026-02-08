@@ -1,0 +1,322 @@
+name: Test baobit channel (with substitutes)
+
+on:
+  push:
+    branches: [main, ci*]
+    tags: ['v*', 'xous-core-*']
+  pull_request:
+    branches: [main]
+
+env:
+  SUBSTITUTE_URLS: "https://guix.baobit.one https://ci.guix.gnu.org https://bordeaux.guix.gnu.org"
+
+jobs:
+  # Dry-run: validates all package definitions (fast)
+  dry-run:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize baobit substitute server
+        run: |
+          curl -s https://guix.baobit.one/signing-key.pub | sudo guix archive --authorize
+
+      # Toolchain
+      - name: Dry-run rust-1.91
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.91)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run rust-1.92
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.92)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run rust-1.93
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.93)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run bare-metal sysroot
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages \
+            -e '(@ (rust-riscv32imac-none-elf) rust-sysroot-riscv32imac-none-elf)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run xous-sysroot
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust-riscv32imac-xous-elf) xous-sysroot)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run rust-xous
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust-xous) rust-xous)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      # Firmware
+      - name: Dry-run bao1x-boot0
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-boot0)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run bao1x-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-boot1)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run bao1x-alt-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-alt-boot1)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run bao1x-baremetal-dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-baremetal-dabao)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) dabao)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run dabao-helloworld
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) dabao-helloworld)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Dry-run baosec
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) baosec)' --dry-run \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+  # Full build: sequential steps share Guix store
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize baobit substitute server
+        run: |
+          curl -s https://guix.baobit.one/signing-key.pub | sudo guix archive --authorize
+
+      # Toolchain
+      - name: Build rust-1.91
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.91)' --root=rust-1.91 \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build rust-1.92
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.92)' --root=rust-1.92 \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build rust-1.93
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust) rust-1.93)' --root=rust-1.93 \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build bare-metal sysroot
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages \
+            -e '(@ (rust-riscv32imac-none-elf) rust-sysroot-riscv32imac-none-elf)' --root=sysroot-none-elf \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build xous-sysroot
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust-riscv32imac-xous-elf) xous-sysroot)' --root=sysroot-xous-elf \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build rust-xous
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (rust-xous) rust-xous)' --root=rust-xous \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      # Firmware
+      - name: Build bao1x-boot0
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-boot0)' --root=bao1x-boot0 \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build bao1x-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-boot1)' --root=bao1x-boot1 \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build bao1x-alt-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-alt-boot1)' --root=bao1x-alt-boot1 \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build bao1x-baremetal-dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-baremetal-dabao)' --root=bao1x-baremetal-dabao \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) dabao)' --root=dabao \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build dabao-helloworld
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) dabao-helloworld)' --root=dabao-helloworld \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Build baosec
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) baosec)' --root=baosec \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      # Determinism checks
+      - name: Check determinism bao1x-boot0
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-boot0)' --check \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Check determinism bao1x-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-boot1)' --check \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Check determinism bao1x-alt-boot1
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-alt-boot1)' --check \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Check determinism bao1x-baremetal-dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) bao1x-baremetal-dabao)' --check \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Check determinism dabao
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) dabao)' --check \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Check determinism dabao-helloworld
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) dabao-helloworld)' --check \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      - name: Check determinism baosec
+        run: |
+          guix time-machine --channels=${{ matrix.channels }} \
+            -- build -L packages -e '(@ (bao) baosec)' --check \
+            --substitute-urls="${SUBSTITUTE_URLS}"
+
+      # Summary and artifacts
+      - name: Reproducibility summary
+        if: always()
+        run: |
+          echo "## Baobit Builds (${{ matrix.channels }}) - With Substitutes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Substitute servers: ${SUBSTITUTE_URLS}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Toolchain Store Paths" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.91-0 (cargo): $(readlink -f rust-1.91-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.91-1 (rustc): $(readlink -f rust-1.91-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.92-0 (cargo): $(readlink -f rust-1.92-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.92-1 (rustc): $(readlink -f rust-1.92-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.93-0 (cargo): $(readlink -f rust-1.93-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-1.93-1 (rustc): $(readlink -f rust-1.93-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "sysroot-none-elf: $(readlink -f sysroot-none-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "sysroot-xous-elf: $(readlink -f sysroot-xous-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "rust-xous: $(readlink -f rust-xous 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Firmware Store Paths" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "bao1x-boot0: $(readlink -f bao1x-boot0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "bao1x-boot1: $(readlink -f bao1x-boot1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "bao1x-alt-boot1: $(readlink -f bao1x-alt-boot1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "bao1x-baremetal-dabao: $(readlink -f bao1x-baremetal-dabao 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "dabao: $(readlink -f dabao 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "dabao-helloworld: $(readlink -f dabao-helloworld 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo "baosec: $(readlink -f baosec 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          for pkg in bao1x-boot0 bao1x-boot1 bao1x-alt-boot1 bao1x-baremetal-dabao dabao dabao-helloworld baosec; do
+            for f in "$pkg"/*.uf2 "$pkg"/*.img "$pkg"/*.bin; do
+              [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+            done
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          for pkg in bao1x-boot0 bao1x-boot1 bao1x-alt-boot1 bao1x-baremetal-dabao dabao dabao-helloworld baosec; do
+            cp $pkg/*.uf2 artifacts/ 2>/dev/null || true
+            cp $pkg/*.img artifacts/ 2>/dev/null || true
+            cp $pkg/*.bin artifacts/ 2>/dev/null || true
+          done
+          ls -la artifacts/ || echo "No artifacts found"
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baochip-substitutes-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
