@@ -29,7 +29,7 @@ jobs:
 
       - name: Authorize baobit substitute server
         run: |
-          curl -s https://guix.baobit.one/signing-key.pub | sudo guix archive --authorize
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
 
       # Toolchain
       - name: Dry-run rust-1.91
@@ -130,7 +130,7 @@ jobs:
 
       - name: Authorize baobit substitute server
         run: |
-          curl -s https://guix.baobit.one/signing-key.pub | sudo guix archive --authorize
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
 
       # Toolchain
       - name: Build rust-1.91
