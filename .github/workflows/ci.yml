@@ -26,7 +26,7 @@ jobs:
 
       - name: Dry-run all packages
         run: |
-          make DRY=1 SUBS= CHANNELS=${{ matrix.channels }} \
+          make DRY=1 SUBS=official CHANNELS=${{ matrix.channels }} \
             rust-1.91 rust-1.92 rust-1.93 \
             rv32imac-none rv32imac-xous toolchain \
             boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec
@@ -49,66 +49,66 @@ jobs:
 
       # Toolchain builds (no substitutes)
       - name: Build rust-1.91
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=rust-1.91 rust-1.91
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=rust-1.91 rust-1.91
 
       - name: Build rust-1.92
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=rust-1.92 rust-1.92
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=rust-1.92 rust-1.92
 
       - name: Build rust-1.93
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=rust-1.93 rust-1.93
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=rust-1.93 rust-1.93
 
       - name: Build rv32imac-none
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=sysroot-none-elf rv32imac-none
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=sysroot-none-elf rv32imac-none
 
       - name: Build rv32imac-xous
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=sysroot-xous-elf rv32imac-xous
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=sysroot-xous-elf rv32imac-xous
 
       - name: Build toolchain
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=rust-xous toolchain
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=rust-xous toolchain
 
       # Firmware builds
       - name: Build boot0
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot0 boot0
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot0 boot0
 
       - name: Build boot1
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot1 boot1
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot1 boot1
 
       - name: Build alt-boot1
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=bao1x-alt-boot1 alt-boot1
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=bao1x-alt-boot1 alt-boot1
 
       - name: Build baremetal-dabao
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=bao1x-baremetal-dabao baremetal-dabao
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=bao1x-baremetal-dabao baremetal-dabao
 
       - name: Build dabao
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=dabao dabao
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=dabao dabao
 
       - name: Build dabao-helloworld
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=dabao-helloworld dabao-helloworld
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=dabao-helloworld dabao-helloworld
 
       - name: Build baosec
-        run: make SUBS= CHANNELS=${{ matrix.channels }} ROOT=baosec baosec
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=baosec baosec
 
       # Determinism checks
       - name: Check determinism boot0
-        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 boot0
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 boot0
 
       - name: Check determinism boot1
-        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 boot1
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 boot1
 
       - name: Check determinism alt-boot1
-        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 alt-boot1
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 alt-boot1
 
       - name: Check determinism baremetal-dabao
-        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 baremetal-dabao
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 baremetal-dabao
 
       - name: Check determinism dabao
-        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 dabao
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 dabao
 
       - name: Check determinism dabao-helloworld
-        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 dabao-helloworld
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 dabao-helloworld
 
       - name: Check determinism baosec
-        run: make SUBS= CHANNELS=${{ matrix.channels }} CHECK=1 baosec
+        run: make SUBS=official CHANNELS=${{ matrix.channels }} CHECK=1 baosec
 
       # Summary and artifacts
       - name: Reproducibility summary

@@ -9,21 +9,42 @@
 #
 #   CHANNELS=channels-codeberg.scm make toolchain
 #   make rv32imac-none DRY=1
-#   make boot0 SUBS="https://guix.baobit.one" ROOT=boot0
+#   make boot0 SUBS=baobit ROOT=boot0
 #   make boot0 CHECK=1
 
 CHANNELS ?= channels.scm
 DRY ?=
-SUBS ?= https://guix.baobit.one https://ci.guix.gnu.org https://bordeaux.guix.gnu.org
 ROOT ?=
 CHECK ?=
+
+# Substitute URL definitions
+SUBS_OFFICIAL := https://ci.guix.gnu.org https://bordeaux.guix.gnu.org
+SUBS_BAOBIT   := https://guix.baobit.one
+SUBS_ALL      := $(SUBS_BAOBIT) $(SUBS_OFFICIAL)
+
+# Default: use all substitutes (baobit + official)
+SUBS ?= all
+
+# Resolve preset names to URLs
+ifeq ($(SUBS),all)
+  _SUBS := $(SUBS_ALL)
+else ifeq ($(SUBS),official)
+  _SUBS := $(SUBS_OFFICIAL)
+else ifeq ($(SUBS),baobit)
+  _SUBS := $(SUBS_BAOBIT)
+else ifeq ($(SUBS),none)
+  _SUBS :=
+else
+  # Raw URL passthrough for custom values
+  _SUBS := $(SUBS)
+endif
 
 TM := guix time-machine --channels=$(CHANNELS) -- build -L packages
 ifdef DRY
   TM += --dry-run
 endif
-ifdef SUBS
-  TM += --substitute-urls="$(SUBS)"
+ifneq ($(_SUBS),)
+  TM += --substitute-urls="$(_SUBS)"
 endif
 ifdef ROOT
   TM += --root=$(ROOT)
@@ -51,8 +72,11 @@ help:
 	@echo "Options:"
 	@echo "  CHANNELS=file.scm  - use different channels file"
 	@echo "  DRY=1              - dry-run only"
-	@echo "  SUBS='url ...'     - substitute URLs (default: guix.baobit.one + official)"
-	@echo "  SUBS=              - disable substitutes"
+	@echo "  SUBS=all           - baobit + official substitutes (default)"
+	@echo "  SUBS=official      - official Guix substitutes only"
+	@echo "  SUBS=baobit        - baobit substitute only"
+	@echo "  SUBS=none          - disable substitutes (build from source)"
+	@echo "  SUBS='url ...'     - custom substitute URLs"
 	@echo "  ROOT=name          - create GC root with given name"
 	@echo "  CHECK=1            - verify reproducibility"
 
