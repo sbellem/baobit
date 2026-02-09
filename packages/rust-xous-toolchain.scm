@@ -44,7 +44,7 @@
           (commit "ca03bea71ce37fac6696f67020d27d4172f65771")))  ; 1.90.0-xous
     (file-name "rust-xous-source")
     (sha256
-     (base32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))))  ; TODO: update
+     (base32 "01y6dl7f7ag4pgagav0qp4chir90qraidqsh7r8ml97mcsxwfkfl"))))
 
 ;;; LLVM compiler-rt source (needed for builtins)
 ;;; Fetched separately to avoid the 2GB+ recursive llvm-project fetch.
@@ -57,7 +57,7 @@
           (commit "rustc/20.1-2025-07-13")))
     (file-name "llvm-compiler-rt-source")
     (sha256
-     (base32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))))  ; TODO: update
+     (base32 "1cw6a6blx0qfvlsp2p5wzdlnqnnnlcfjz5xx24vlcsm43vp0mk1a"))))
 
 ;;; Backtrace-rs source (needed for std's backtrace support)
 ;;; Commit from betrusted-io/rust 1.90.0-xous submodule reference
@@ -69,7 +69,7 @@
           (commit "b65ab935fb2e0d59dba8966ffca09c9cc5a5f57c")))
     (file-name "backtrace-rs-source")
     (sha256
-     (base32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))))  ; TODO: update
+     (base32 "1rymm0cxx6ypjazxjps9w59qkw90rx6594w4ayxjym1a17p78vvw"))))
 
 ;;; RISC-V 32-bit bare-metal cross toolchain (needed for build)
 (define riscv32-none-elf-gcc
