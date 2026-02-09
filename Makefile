@@ -18,9 +18,10 @@ ROOT ?=
 CHECK ?=
 
 # Substitute URL definitions
-SUBS_OFFICIAL := https://ci.guix.gnu.org https://bordeaux.guix.gnu.org
-SUBS_BAOBIT   := https://guix.baobit.one
-SUBS_ALL      := $(SUBS_BAOBIT) $(SUBS_OFFICIAL)
+SUBS_OFFICIAL   := https://ci.guix.gnu.org https://bordeaux.guix.gnu.org
+SUBS_BAOBIT     := https://guix.baobit.one
+SUBS_COMMUNITY  := https://ci.guix.moe
+SUBS_ALL        := $(SUBS_BAOBIT) $(SUBS_COMMUNITY) $(SUBS_OFFICIAL)
 
 # Default: use all substitutes (baobit + official)
 SUBS ?= all
@@ -32,6 +33,8 @@ else ifeq ($(SUBS),official)
   _SUBS := $(SUBS_OFFICIAL)
 else ifeq ($(SUBS),baobit)
   _SUBS := $(SUBS_BAOBIT)
+else ifeq ($(SUBS),community)
+  _SUBS := $(SUBS_COMMUNITY)
 else ifeq ($(SUBS),none)
   _SUBS :=
 else
@@ -72,9 +75,10 @@ help:
 	@echo "Options:"
 	@echo "  CHANNELS=file.scm  - use different channels file"
 	@echo "  DRY=1              - dry-run only"
-	@echo "  SUBS=all           - baobit + official substitutes (default)"
+	@echo "  SUBS=all           - baobit + community + official substitutes (default)"
 	@echo "  SUBS=official      - official Guix substitutes only"
 	@echo "  SUBS=baobit        - baobit substitute only"
+	@echo "  SUBS=community     - community substitute (ci.guix.moe) only"
 	@echo "  SUBS=none          - disable substitutes (build from source)"
 	@echo "  SUBS='url ...'     - custom substitute URLs"
 	@echo "  ROOT=name          - create GC root with given name"
