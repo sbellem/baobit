@@ -34,17 +34,30 @@
 ;;;
 
 ;;; The betrusted-io/rust fork with Xous target support
+;;; Note: We don't use (recursive? #t) to avoid fetching the massive llvm-project
+;;; submodule (~2GB). Instead, we fetch just compiler-rt separately below.
 (define rust-xous-source
   (origin
     (method git-fetch)
     (uri (git-reference
           (url "https://github.com/betrusted-io/rust")
-          (commit "2ae864f7d4d42c73ab05f5e01265ea31ae81a86e")
-          (recursive? #t)))
+          (commit "2ae864f7d4d42c73ab05f5e01265ea31ae81a86e")))
     (file-name "rust-xous-source")
-    ;; nix hash convert --to nix32 sha256-+iLFMy78f5xgw22fHPKmTy5WQonYbsi6Ms9tWeh6uxI=
     (sha256
-     (base32 "04mvgbl5jvfg6axchvnqi515cbjglvr1r7vdqdh9qzzw5qrwa8ps"))))
+     (base32 "0lh2ja680clqc5clcch8av8505rk5s71nkdg21yj4c7w5h24bmay"))))
+
+;;; LLVM compiler-rt source (needed for builtins)
+;;; Fetched separately to avoid the 2GB+ recursive llvm-project fetch.
+;;; From betrusted-io/rust .gitmodules: rust-lang/llvm-project branch rustc/21.1-2025-08-01
+(define llvm-compiler-rt-source
+  (origin
+    (method git-fetch)
+    (uri (git-reference
+          (url "https://github.com/rust-lang/llvm-project")
+          (commit "rustc/21.1-2025-08-01")))
+    (file-name "llvm-compiler-rt-source")
+    (sha256
+     (base32 "1ay736pskcf4fzrdqw9kw5z6dskf329hjxw4xyk88g688nmzbzmi"))))
 
 ;;; RISC-V 32-bit bare-metal cross toolchain (needed for build)
 (define riscv32-none-elf-gcc
@@ -66,7 +79,15 @@
       #~(modify-phases %standard-phases
           (delete 'configure)
           (delete 'check)
-          (add-after 'unpack 'setup-vendor
+          (add-after 'unpack 'setup-compiler-rt
+            (lambda* (#:key inputs #:allow-other-keys)
+              ;; Set up compiler-rt from the separate llvm-project fetch
+              ;; The build expects it at src/llvm-project/compiler-rt
+              (let ((llvm-src (assoc-ref inputs "llvm-compiler-rt")))
+                (mkdir-p "src/llvm-project")
+                (copy-recursively (string-append llvm-src "/compiler-rt")
+                                  "src/llvm-project/compiler-rt"))))
+          (add-after 'setup-compiler-rt 'setup-vendor
             (lambda* (#:key inputs #:allow-other-keys)
               (use-modules (ice-9 popen)
                            (ice-9 rdelim))
@@ -180,6 +201,7 @@
        ("coreutils" ,coreutils)
        ("riscv32-none-elf-gcc" ,riscv32-none-elf-gcc)
        ("riscv32-none-elf-binutils" ,riscv32-none-elf-binutils)
+       ("llvm-compiler-rt" ,llvm-compiler-rt-source)
        ;; Add all crates as inputs with crate- prefix
        ,@(map (lambda (crate)
                 `(,(string-append "crate-" (origin-file-name crate)) ,crate))
