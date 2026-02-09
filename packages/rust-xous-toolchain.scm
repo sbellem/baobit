@@ -59,6 +59,18 @@
     (sha256
      (base32 "1ay736pskcf4fzrdqw9kw5z6dskf329hjxw4xyk88g688nmzbzmi"))))
 
+;;; Backtrace-rs source (needed for std's backtrace support)
+;;; Commit from betrusted-io/rust 1.93.0-xous submodule reference
+(define backtrace-rs-source
+  (origin
+    (method git-fetch)
+    (uri (git-reference
+          (url "https://github.com/rust-lang/backtrace-rs")
+          (commit "b65ab935fb2e0d59dba8966ffca09c9cc5a5f57c")))
+    (file-name "backtrace-rs-source")
+    (sha256
+     (base32 "1rymm0cxx6ypjazxjps9w59qkw90rx6594w4ayxjym1a17p78vvw"))))
+
 ;;; RISC-V 32-bit bare-metal cross toolchain (needed for build)
 (define riscv32-none-elf-gcc
   (cross-gcc "riscv32-none-elf"
@@ -79,15 +91,18 @@
       #~(modify-phases %standard-phases
           (delete 'configure)
           (delete 'check)
-          (add-after 'unpack 'setup-compiler-rt
+          (add-after 'unpack 'setup-submodules
             (lambda* (#:key inputs #:allow-other-keys)
               ;; Set up compiler-rt from the separate llvm-project fetch
               ;; The build expects it at src/llvm-project/compiler-rt
-              (let ((llvm-src (assoc-ref inputs "llvm-compiler-rt")))
+              (let ((llvm-src (assoc-ref inputs "llvm-compiler-rt"))
+                    (backtrace-src (assoc-ref inputs "backtrace-rs")))
                 (mkdir-p "src/llvm-project")
                 (copy-recursively (string-append llvm-src "/compiler-rt")
-                                  "src/llvm-project/compiler-rt"))))
-          (add-after 'setup-compiler-rt 'setup-vendor
+                                  "src/llvm-project/compiler-rt")
+                ;; Set up backtrace-rs for std's backtrace support
+                (copy-recursively backtrace-src "library/backtrace"))))
+          (add-after 'setup-submodules 'setup-vendor
             (lambda* (#:key inputs #:allow-other-keys)
               (use-modules (ice-9 popen)
                            (ice-9 rdelim))
@@ -202,6 +217,7 @@
        ("riscv32-none-elf-gcc" ,riscv32-none-elf-gcc)
        ("riscv32-none-elf-binutils" ,riscv32-none-elf-binutils)
        ("llvm-compiler-rt" ,llvm-compiler-rt-source)
+       ("backtrace-rs" ,backtrace-rs-source)
        ;; Add all crates as inputs with crate- prefix
        ,@(map (lambda (crate)
                 `(,(string-append "crate-" (origin-file-name crate)) ,crate))
