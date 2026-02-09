@@ -17,7 +17,7 @@
 ;;; along with GNU Guix.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (embedded)
-  #:use-module (rust)
+  #:use-module (gnu packages rust)
   #:use-module (gnu packages cross-base)
   #:use-module (guix packages)
   #:use-module (guix gexp)
@@ -37,11 +37,11 @@
 
 (define-public rust-sysroot-riscv32imac-none-elf
   (package
-    (inherit rust-1.93)
+    (inherit rust-1.90)
     (name "rust-sysroot-riscv32imac-none-elf")
     (outputs '("out"))
     (arguments
-     (substitute-keyword-arguments (package-arguments rust-1.93)
+     (substitute-keyword-arguments (package-arguments rust-1.90)
        ((#:tests? _ #f) #f)
        ((#:phases phases)
         #~(modify-phases #$phases
@@ -129,7 +129,7 @@
             (delete 'wrap-rustc)
             (delete 'delete-install-logs)))))
     (native-inputs
-     (modify-inputs (package-native-inputs rust-1.93)
+     (modify-inputs (package-native-inputs rust-1.90)
        (prepend (cross-gcc "riscv32-none-elf" #:libc #f))
        (prepend (cross-binutils "riscv32-none-elf"))))
     ;; Propagate the linker so consumers don't need to add it explicitly

@@ -35,7 +35,6 @@ jobs:
       - name: Dry-run all packages
         run: |
           make DRY=1 CHANNELS=${{ matrix.channels }} \
-            rust-1.91 rust-1.92 rust-1.93 \
             rv32imac-none rv32imac-xous toolchain \
             boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec
 
@@ -63,16 +62,7 @@ jobs:
         run: |
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
-      # Toolchain builds
-      - name: Build rust-1.91
-        run: make CHANNELS=${{ matrix.channels }} ROOT=rust-1.91 rust-1.91
-
-      - name: Build rust-1.92
-        run: make CHANNELS=${{ matrix.channels }} ROOT=rust-1.92 rust-1.92
-
-      - name: Build rust-1.93
-        run: make CHANNELS=${{ matrix.channels }} ROOT=rust-1.93 rust-1.93
-
+      # Toolchain builds (rust-1.90 from rust-team has substitutes)
       - name: Build rv32imac-none
         run: make CHANNELS=${{ matrix.channels }} ROOT=sysroot-none-elf rv32imac-none
 
@@ -135,12 +125,6 @@ jobs:
 
           echo "### Toolchain Store Paths" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.91-0 (cargo): $(readlink -f rust-1.91-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.91-1 (rustc): $(readlink -f rust-1.91-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.92-0 (cargo): $(readlink -f rust-1.92-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.92-1 (rustc): $(readlink -f rust-1.92-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.93-0 (cargo): $(readlink -f rust-1.93-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.93-1 (rustc): $(readlink -f rust-1.93-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "sysroot-none-elf: $(readlink -f sysroot-none-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "sysroot-xous-elf: $(readlink -f sysroot-xous-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "rust-xous: $(readlink -f rust-xous 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY

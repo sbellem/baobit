@@ -24,7 +24,7 @@
   #:use-module (gnu packages commencement)
   #:use-module (gnu packages llvm)
   #:use-module (gnu packages version-control)
-  #:use-module (rust)
+  #:use-module (gnu packages rust)
   #:use-module (embedded)
   #:use-module (xous-sysroot-crates))
 
@@ -41,23 +41,35 @@
     (method git-fetch)
     (uri (git-reference
           (url "https://github.com/betrusted-io/rust")
-          (commit "2ae864f7d4d42c73ab05f5e01265ea31ae81a86e")))
+          (commit "ca03bea71ce37fac6696f67020d27d4172f65771")))  ; 1.90.0-xous
     (file-name "rust-xous-source")
     (sha256
-     (base32 "0lh2ja680clqc5clcch8av8505rk5s71nkdg21yj4c7w5h24bmay"))))
+     (base32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))))  ; TODO: update
 
 ;;; LLVM compiler-rt source (needed for builtins)
 ;;; Fetched separately to avoid the 2GB+ recursive llvm-project fetch.
-;;; From betrusted-io/rust .gitmodules: rust-lang/llvm-project branch rustc/21.1-2025-08-01
+;;; From betrusted-io/rust 1.90.0-xous .gitmodules: rust-lang/llvm-project branch rustc/20.1-2025-07-13
 (define llvm-compiler-rt-source
   (origin
     (method git-fetch)
     (uri (git-reference
           (url "https://github.com/rust-lang/llvm-project")
-          (commit "rustc/21.1-2025-08-01")))
+          (commit "rustc/20.1-2025-07-13")))
     (file-name "llvm-compiler-rt-source")
     (sha256
-     (base32 "1ay736pskcf4fzrdqw9kw5z6dskf329hjxw4xyk88g688nmzbzmi"))))
+     (base32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))))  ; TODO: update
+
+;;; Backtrace-rs source (needed for std's backtrace support)
+;;; Commit from betrusted-io/rust 1.90.0-xous submodule reference
+(define backtrace-rs-source
+  (origin
+    (method git-fetch)
+    (uri (git-reference
+          (url "https://github.com/rust-lang/backtrace-rs")
+          (commit "b65ab935fb2e0d59dba8966ffca09c9cc5a5f57c")))
+    (file-name "backtrace-rs-source")
+    (sha256
+     (base32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))))  ; TODO: update
 
 ;;; RISC-V 32-bit bare-metal cross toolchain (needed for build)
 (define riscv32-none-elf-gcc
@@ -70,7 +82,7 @@
 (define-public rust-sysroot-riscv32imac-xous-elf
   (package
     (name "rust-sysroot-riscv32imac-xous-elf")
-    (version "1.93.0")
+    (version "1.90.0")
     (source rust-xous-source)
     (build-system gnu-build-system)
     (arguments
@@ -79,15 +91,18 @@
       #~(modify-phases %standard-phases
           (delete 'configure)
           (delete 'check)
-          (add-after 'unpack 'setup-compiler-rt
+          (add-after 'unpack 'setup-submodules
             (lambda* (#:key inputs #:allow-other-keys)
               ;; Set up compiler-rt from the separate llvm-project fetch
               ;; The build expects it at src/llvm-project/compiler-rt
-              (let ((llvm-src (assoc-ref inputs "llvm-compiler-rt")))
+              (let ((llvm-src (assoc-ref inputs "llvm-compiler-rt"))
+                    (backtrace-src (assoc-ref inputs "backtrace-rs")))
                 (mkdir-p "src/llvm-project")
                 (copy-recursively (string-append llvm-src "/compiler-rt")
-                                  "src/llvm-project/compiler-rt"))))
-          (add-after 'setup-compiler-rt 'setup-vendor
+                                  "src/llvm-project/compiler-rt")
+                ;; Set up backtrace-rs for std's backtrace support
+                (copy-recursively backtrace-src "library/backtrace"))))
+          (add-after 'setup-submodules 'setup-vendor
             (lambda* (#:key inputs #:allow-other-keys)
               (use-modules (ice-9 popen)
                            (ice-9 rdelim))
@@ -192,8 +207,8 @@
                  (find-files "library/target/riscv32imac-unknown-xous-elf/release/deps"
                              "\\.rlib$"))))))))
     (native-inputs
-     `(("rust" ,rust-1.93)
-       ("rust:cargo" ,rust-1.93 "cargo")
+     `(("rust" ,rust-1.90)
+       ("rust:cargo" ,rust-1.90 "cargo")
        ("gcc-toolchain" ,gcc-toolchain)
        ("git" ,git)
        ("tar" ,tar)
@@ -202,6 +217,7 @@
        ("riscv32-none-elf-gcc" ,riscv32-none-elf-gcc)
        ("riscv32-none-elf-binutils" ,riscv32-none-elf-binutils)
        ("llvm-compiler-rt" ,llvm-compiler-rt-source)
+       ("backtrace-rs" ,backtrace-rs-source)
        ;; Add all crates as inputs with crate- prefix
        ,@(map (lambda (crate)
                 `(,(string-append "crate-" (origin-file-name crate)) ,crate))
@@ -225,7 +241,7 @@ applications.  This package propagates lld-18 as the linker.")
 (define-public rust-sysroot-merged
   (package
     (name "rust-sysroot-merged")
-    (version "1.93.0")
+    (version "1.90.0")
     (source #f)
     (build-system trivial-build-system)
     (arguments
@@ -257,7 +273,7 @@ applications.  This package propagates lld-18 as the linker.")
              (string-append rustlib-out
                             "/riscv32imac-unknown-xous-elf"))))))
     (inputs
-     `(("rust" ,rust-1.93)
+     `(("rust" ,rust-1.90)
        ("bare-metal-sysroot" ,rust-sysroot-riscv32imac-none-elf)
        ("xous-sysroot" ,rust-sysroot-riscv32imac-xous-elf)))
     (home-page "https://github.com/betrusted-io/rust")
@@ -271,7 +287,7 @@ targets for Xous development.")
 (define-public rust-xous-toolchain
   (package
     (name "rust-xous-toolchain")
-    (version "1.93.0")
+    (version "1.90.0")
     (source #f)
     (build-system trivial-build-system)
     (arguments
@@ -325,8 +341,8 @@ targets for Xous development.")
              '("rustfmt" "cargo-fmt" "clippy-driver" "cargo-clippy"
                "rust-analyzer" "rustdoc"))))))
     (inputs
-     `(("rust" ,rust-1.93)
-       ("rust:cargo" ,rust-1.93 "cargo")
+     `(("rust" ,rust-1.90)
+       ("rust:cargo" ,rust-1.90 "cargo")
        ("rust-sysroot-merged" ,rust-sysroot-merged)
        ("gcc-toolchain" ,gcc-toolchain)
        ("bash" ,bash)))

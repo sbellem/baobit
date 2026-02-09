@@ -27,7 +27,6 @@ jobs:
       - name: Dry-run all packages
         run: |
           make DRY=1 SUBS=official CHANNELS=${{ matrix.channels }} \
-            rust-1.91 rust-1.92 rust-1.93 \
             rv32imac-none rv32imac-xous toolchain \
             boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec
 
@@ -47,16 +46,7 @@ jobs:
           version: "1.5.0"
           pullAfterInstall: false
 
-      # Toolchain builds (no substitutes)
-      - name: Build rust-1.91
-        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=rust-1.91 rust-1.91
-
-      - name: Build rust-1.92
-        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=rust-1.92 rust-1.92
-
-      - name: Build rust-1.93
-        run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=rust-1.93 rust-1.93
-
+      # Toolchain builds (rust-1.90 from rust-team has substitutes)
       - name: Build rv32imac-none
         run: make SUBS=official CHANNELS=${{ matrix.channels }} ROOT=sysroot-none-elf rv32imac-none
 
@@ -119,12 +109,6 @@ jobs:
 
           echo "### Toolchain Store Paths" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.91-0 (cargo): $(readlink -f rust-1.91-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.91-1 (rustc): $(readlink -f rust-1.91-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.92-0 (cargo): $(readlink -f rust-1.92-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.92-1 (rustc): $(readlink -f rust-1.92-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.93-0 (cargo): $(readlink -f rust-1.93-0 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
-          echo "rust-1.93-1 (rustc): $(readlink -f rust-1.93-1 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "sysroot-none-elf: $(readlink -f sysroot-none-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "sysroot-xous-elf: $(readlink -f sysroot-xous-elf 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
           echo "rust-xous: $(readlink -f rust-xous 2>/dev/null || echo 'Build failed')" >> $GITHUB_STEP_SUMMARY
@@ -169,7 +153,7 @@ jobs:
         if: success()
         run: |
           mkdir -p nars/toolchain
-          for pkg in rust-1.91-0 rust-1.91-1 rust-1.92-0 rust-1.92-1 rust-1.93-0 rust-1.93-1 sysroot-none-elf sysroot-xous-elf rust-xous; do
+          for pkg in sysroot-none-elf sysroot-xous-elf rust-xous; do
             if [ -L "$pkg" ]; then
               store_path=$(readlink -f "$pkg")
               if [ -d "$store_path" ]; then

@@ -128,7 +128,7 @@ baosec:
 
 # Dry-run shortcuts
 all-dry:
-	$(MAKE) DRY=1 rust-1.93 rv32imac-none rv32imac-xous toolchain boot0
+	$(MAKE) DRY=1 rv32imac-none rv32imac-xous toolchain boot0
 
 dry-toolchain:
 	$(MAKE) DRY=1 toolchain
