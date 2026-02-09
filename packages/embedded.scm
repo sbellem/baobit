@@ -119,7 +119,7 @@
                                 (%current-system)))))
                        (src-lib (string-append
                                  "build/" host-triple
-                                 "/stage1/lib/rustlib/" target "/lib"))
+                                 "/stage2/lib/rustlib/" target "/lib"))
                        (dest-lib (string-append
                                   out "/lib/rustlib/" target "/lib")))
                   (mkdir-p dest-lib)
