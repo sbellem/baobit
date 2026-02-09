@@ -26,7 +26,13 @@
   #:use-module (gnu packages version-control)
   #:use-module (gnu packages rust)
   #:use-module (embedded)
-  #:use-module (xous-sysroot-crates))
+  #:use-module (xous-sysroot-crates)
+  #:use-module (xous-config))
+
+;; Resolve %rust-version string to actual rust package
+(define %rust
+  (module-ref (resolve-module '(gnu packages rust))
+              (string->symbol (string-append "rust-" %rust-version))))
 
 
 ;;;
@@ -41,10 +47,10 @@
     (method git-fetch)
     (uri (git-reference
           (url "https://github.com/betrusted-io/rust")
-          (commit "ca03bea71ce37fac6696f67020d27d4172f65771")))  ; 1.90.0-xous
+          (commit %rust-xous-commit)))
     (file-name "rust-xous-source")
     (sha256
-     (base32 "01y6dl7f7ag4pgagav0qp4chir90qraidqsh7r8ml97mcsxwfkfl"))))
+     (base32 %rust-xous-guix-hash))))
 
 ;;; LLVM compiler-rt source (needed for builtins)
 ;;; Fetched separately to avoid the 2GB+ recursive llvm-project fetch.
@@ -82,7 +88,7 @@
 (define-public rust-sysroot-riscv32imac-xous-elf
   (package
     (name "rust-sysroot-riscv32imac-xous-elf")
-    (version "1.90.0")
+    (version (string-append %rust-version ".0"))
     (source rust-xous-source)
     (build-system gnu-build-system)
     (arguments
@@ -207,8 +213,8 @@
                  (find-files "library/target/riscv32imac-unknown-xous-elf/release/deps"
                              "\\.rlib$"))))))))
     (native-inputs
-     `(("rust" ,rust-1.90)
-       ("rust:cargo" ,rust-1.90 "cargo")
+     `(("rust" ,%rust)
+       ("rust:cargo" ,%rust "cargo")
        ("gcc-toolchain" ,gcc-toolchain)
        ("git" ,git)
        ("tar" ,tar)
@@ -241,7 +247,7 @@ applications.  This package propagates lld-18 as the linker.")
 (define-public rust-sysroot-merged
   (package
     (name "rust-sysroot-merged")
-    (version "1.90.0")
+    (version (string-append %rust-version ".0"))
     (source #f)
     (build-system trivial-build-system)
     (arguments
@@ -273,7 +279,7 @@ applications.  This package propagates lld-18 as the linker.")
              (string-append rustlib-out
                             "/riscv32imac-unknown-xous-elf"))))))
     (inputs
-     `(("rust" ,rust-1.90)
+     `(("rust" ,%rust)
        ("bare-metal-sysroot" ,rust-sysroot-riscv32imac-none-elf)
        ("xous-sysroot" ,rust-sysroot-riscv32imac-xous-elf)))
     (home-page "https://github.com/betrusted-io/rust")
@@ -287,7 +293,7 @@ targets for Xous development.")
 (define-public rust-xous-toolchain
   (package
     (name "rust-xous-toolchain")
-    (version "1.90.0")
+    (version (string-append %rust-version ".0"))
     (source #f)
     (build-system trivial-build-system)
     (arguments
@@ -341,8 +347,8 @@ targets for Xous development.")
              '("rustfmt" "cargo-fmt" "clippy-driver" "cargo-clippy"
                "rust-analyzer" "rustdoc"))))))
     (inputs
-     `(("rust" ,rust-1.90)
-       ("rust:cargo" ,rust-1.90 "cargo")
+     `(("rust" ,%rust)
+       ("rust:cargo" ,%rust "cargo")
        ("rust-sysroot-merged" ,rust-sysroot-merged)
        ("gcc-toolchain" ,gcc-toolchain)
        ("bash" ,bash)))

@@ -23,7 +23,8 @@
   #:use-module (guix gexp)
   #:use-module (guix utils)
   #:use-module (guix platform)
-  #:use-module ((guix licenses) #:prefix license:))
+  #:use-module ((guix licenses) #:prefix license:)
+  #:use-module (xous-config))
 
 ;;; Commentary:
 ;;;
@@ -35,13 +36,18 @@
 ;;;
 ;;; Code:
 
+;; Resolve %rust-version string to actual rust package
+(define %rust
+  (module-ref (resolve-module '(gnu packages rust))
+              (string->symbol (string-append "rust-" %rust-version))))
+
 (define-public rust-sysroot-riscv32imac-none-elf
   (package
-    (inherit rust-1.90)
+    (inherit %rust)
     (name "rust-sysroot-riscv32imac-none-elf")
     (outputs '("out"))
     (arguments
-     (substitute-keyword-arguments (package-arguments rust-1.90)
+     (substitute-keyword-arguments (package-arguments %rust)
        ((#:tests? _ #f) #f)
        ((#:phases phases)
         #~(modify-phases #$phases
@@ -129,7 +135,7 @@
             (delete 'wrap-rustc)
             (delete 'delete-install-logs)))))
     (native-inputs
-     (modify-inputs (package-native-inputs rust-1.90)
+     (modify-inputs (package-native-inputs %rust)
        (prepend (cross-gcc "riscv32-none-elf" #:libc #f))
        (prepend (cross-binutils "riscv32-none-elf"))))
     ;; Propagate the linker so consumers don't need to add it explicitly

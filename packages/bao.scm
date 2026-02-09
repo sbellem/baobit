@@ -3,10 +3,7 @@
 ;;; This module provides packages for building Xous firmware images
 ;;; using git-fetch for reproducible builds across machines.
 ;;;
-;;; IMPORTANT: When updating xous-core version:
-;;; 1. Update %xous-commit and %xous-hash below
-;;; 2. Update %xous-version to match the release
-;;; 3. Copy matching bao-crates.scm from xous-core/guix/
+;;; IMPORTANT: When updating xous-core version, edit xous-config.scm
 
 (define-module (bao)
   #:use-module (guix packages)
@@ -22,24 +19,29 @@
   #:use-module (gnu packages commencement)
   #:use-module (srfi srfi-1)
   #:use-module (rust-xous-toolchain)
-  #:use-module (bao-crates))
+  #:use-module (bao-crates)
+  #:use-module (xous-config))
 
 ;;; =============================================================
-;;; VERSION CONFIGURATION - Update these for each release
+;;; VERSION CONFIGURATION - See xous-config.scm
 ;;; =============================================================
-
-;; Git commit hash for xous-core (full 40 chars)
-(define %xous-commit "24b7d0bf52db1353cceac6221ab6dab1e9979243")
-
-;; SHA256 hash of the git checkout (get with: guix hash -rx <checkout>)
-(define %xous-hash "1ydgp4xhpl8yp33xaqqrf4qa09r8bhnskw80cikxjf7akl627zl8")
-
-;; Version string (e.g., "v0.9.16-0-gabcd1234" or just "v0.9.16")
-;; v0.9.16-2729-g24b7d0bf5
-(define %xous-version "0.9.16")
 
 ;; Short hash for display (first 8 chars of commit)
 (define %xous-short-hash (substring %xous-commit 0 8))
+
+;;; =============================================================
+;;; ELF BINARY NAMES
+;;; =============================================================
+;;; Maps xtask command to ELF binary name produced by cargo.
+;;; alt-boot1 uses bao1x-boot1 binary (substituted by xtask).
+
+(define %elf-binary-names
+  '(("bao1x-boot0"           . "bao1x-boot0")
+    ("bao1x-boot1"           . "bao1x-boot1")
+    ("bao1x-alt-boot1"       . "bao1x-boot1")
+    ("bao1x-baremetal-dabao" . "bao1x-baremetal-dabao")
+    ("dabao"                 . "dabao")
+    ("baosec"                . "baosec")))
 
 ;;; =============================================================
 ;;; SOURCE DEFINITION - Fetched via git, fully reproducible
@@ -49,10 +51,10 @@
   (origin
     (method git-fetch)
     (uri (git-reference
-          (url "https://github.com/sbellem/xous-core")
+          (url (string-append "https://github.com/" %xous-owner "/xous-core"))
           (commit %xous-commit)))
-    (file-name (git-file-name "xous-core" %xous-version))
-    (sha256 (base32 %xous-hash))))
+    (file-name (git-file-name "xous-core" %xous-git-describe))
+    (sha256 (base32 %xous-guix-hash))))
 
 ;;; Git dependency metadata
 ;;; Each entry: (input-name origin git-url ((crate-name . subdir) ...))
@@ -120,7 +122,7 @@
                                (crate-inputs '()))
   (package
     (name name)
-    (version %xous-version)
+    (version %xous-git-describe)
     (source xous-core-source)
     (build-system gnu-build-system)
     (arguments
@@ -130,28 +132,8 @@
           (delete 'configure)
           (delete 'check)
 
-          ;; Phase 1: Patch versioning to use fixed values
-          (add-after 'unpack 'patch-versioning
-            (lambda _
-              (when (file-exists? "tools/src/sign_image.rs")
-                (substitute* "tools/src/sign_image.rs"
-                  (("SemVer::from_git\\(\\)\\?\\.into\\(\\)")
-                   (string-append "\"" #$%xous-version "\".parse::<SemVer>().unwrap().into()"))))
-              (substitute* "xtask/src/versioning.rs"
-                (("let gitver = output\\.stdout;")
-                 "let gitver = std::env::var(\"XOUS_VERSION\").map(|s| s.into_bytes()).unwrap_or(output.stdout);"))
-              (when (file-exists? "tools/src/swap_writer.rs")
-                (substitute* "tools/src/swap_writer.rs"
-                  (("Command::new\\(\"git\"\\)\\.args\\(&\\[\"rev-parse\", \"HEAD\"\\]\\)\\.output\\(\\)\\.expect\\(\"Failed to execute command\"\\)")
-                   (string-append
-                    "std::env::var(\"GIT_REV\").map(|s| std::process::Output { "
-                    "status: std::process::ExitStatus::default(), "
-                    "stdout: s.into_bytes(), stderr: vec![] }).unwrap_or_else(|_| "
-                    "Command::new(\"git\").args(&[\"rev-parse\", \"HEAD\"]).output()"
-                    ".expect(\"Failed to execute command\"))"))))))
-
-          ;; Phase 2: Set up crates.io vendor directory
-          (add-after 'patch-versioning 'setup-vendor
+          ;; Phase 1: Set up crates.io vendor directory
+          (add-after 'unpack 'setup-vendor
             (lambda* (#:key inputs #:allow-other-keys)
               (use-modules (ice-9 popen)
                            (ice-9 rdelim))
@@ -176,7 +158,7 @@
                              (format port "{\"files\":{},\"package\":\"~a\"}" checksum)))))))
                  inputs))))
 
-          ;; Phase 3: Set up git dependencies
+          ;; Phase 2: Set up git dependencies
           (add-after 'setup-vendor 'setup-git-deps
             (lambda* (#:key inputs #:allow-other-keys)
               (use-modules (ice-9 textual-ports)
@@ -227,7 +209,7 @@
                                (display (string-join filtered "\n") port))))))))
                  (find-files git-vendor-dir "^Cargo\\.toml$")))))
 
-          ;; Phase 4: Patch Cargo.toml files to convert git deps to path deps
+          ;; Phase 3: Patch Cargo.toml files to convert git deps to path deps
           (add-after 'setup-git-deps 'patch-cargo-toml-git-deps
             (lambda _
               (use-modules (ice-9 textual-ports)
@@ -267,7 +249,7 @@
                              (display modified port)))))))
                  (find-files "." "^Cargo\\.toml$")))))
 
-          ;; Phase 5: Set up cargo config
+          ;; Phase 4: Set up cargo config
           (add-after 'patch-cargo-toml-git-deps 'setup-cargo
             (lambda* (#:key inputs #:allow-other-keys)
               (let* ((rust-xous (assoc-ref inputs "rust-xous"))
@@ -310,30 +292,40 @@
                 (call-with-output-file "locales/.cargo/config.toml"
                   (lambda (port) (display vendor-config port))))))
 
-          ;; Phase 6: Build
+          ;; Phase 5: Build
           (replace 'build
             (lambda* (#:key inputs #:allow-other-keys)
-              (setenv "XOUS_VERSION" #$%xous-version)
-              (setenv "GIT_REV" #$%xous-commit)
               (setenv "CARGO_INCREMENTAL" "0")
               (setenv "RUSTFLAGS" (string-append "-C codegen-units=1 --remap-path-prefix="
                                                  (getcwd) "=/build"))
-              (setenv "SOURCE_DATE_EPOCH" "1")
-              (invoke "cargo" "xtask" #$@(string-split xtask-cmd #\space) "--no-verify")))
+              (invoke "cargo" "xtask" #$@(string-split xtask-cmd #\space)
+                      "--no-verify"
+                      "--git-describe" #$%xous-git-describe
+                      "--git-rev" #$%xous-commit)))
 
-          ;; Phase 7: Install
+          ;; Phase 6: Install
           (replace 'install
             (lambda* (#:key outputs #:allow-other-keys)
               (let* ((out (assoc-ref outputs "out"))
-                     (target-path (string-append "target/" #$target-dir "/release")))
+                     (target-path (string-append "target/" #$target-dir "/release"))
+                     ;; Package name is the first word of xtask-cmd
+                     (pkg-name #$(car (string-split xtask-cmd #\space)))
+                     ;; ELF binary name from mapping (see %elf-binary-names)
+                     (elf-name #$(assoc-ref %elf-binary-names
+                                            (car (string-split xtask-cmd #\space))))
+                     (elf-path (string-append target-path "/" elf-name)))
                 (mkdir-p out)
+                ;; Copy firmware images (.uf2, .img, .bin)
                 (for-each
                  (lambda (pattern)
                    (for-each
                     (lambda (file)
                       (copy-file file (string-append out "/" (basename file))))
                     (find-files target-path pattern)))
-                 '("\\.uf2$" "\\.img$" "\\.bin$"))))))))
+                 '("\\.uf2$" "\\.img$" "\\.bin$"))
+                ;; Copy raw ELF file for debugging/analysis
+                (when (file-exists? elf-path)
+                  (copy-file elf-path (string-append out "/" pkg-name ".elf")))))))))
     (native-inputs
      `(("rust-xous" ,rust-xous-toolchain)
        ;; lld-18 and cross-binutils are propagated from rust-xous-toolchain sysroots
@@ -399,7 +391,7 @@
 (define-public bao1x-bootloader
   (package
     (name "bao1x-bootloader")
-    (version %xous-version)
+    (version %xous-git-describe)
     (source #f)
     (build-system trivial-build-system)
     (arguments
