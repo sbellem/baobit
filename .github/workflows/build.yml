@@ -1,0 +1,629 @@
+name: Build packages
+
+on:
+  push:
+    branches: [main, ci*]
+    tags: ['v*', 'xous-core-*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Toolchain: bare metal sysroot
+  rust-sysroot-riscv32imac-none-elf:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build rust-sysroot-riscv32imac-none-elf
+        run: make CHANNELS=${{ matrix.channels }} ROOT=sysroot-none-elf rv32imac-none
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 rv32imac-none
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## rust-sysroot-riscv32imac-none-elf (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f sysroot-none-elf 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Export nar archive
+        if: success()
+        run: |
+          mkdir -p nars
+          if [ -L sysroot-none-elf ]; then
+            store_path=$(readlink -f sysroot-none-elf)
+            if [ -d "$store_path" ]; then
+              guix archive --export "$store_path" | gzip > nars/sysroot-none-elf.nar.gz
+            fi
+          fi
+
+      - name: Upload nar archive
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sysroot-none-elf-${{ matrix.channels }}
+          path: nars/
+          if-no-files-found: warn
+
+  # Toolchain: xous sysroot
+  xous-sysroot:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build rust-sysroot-riscv32imac-xous-elf
+        run: make CHANNELS=${{ matrix.channels }} ROOT=sysroot-xous-elf rv32imac-xous
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 rv32imac-xous
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## rust-sysroot-riscv32imac-xous-elf (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f sysroot-xous-elf 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Export nar archive
+        if: success()
+        run: |
+          mkdir -p nars
+          if [ -L sysroot-xous-elf ]; then
+            store_path=$(readlink -f sysroot-xous-elf)
+            if [ -d "$store_path" ]; then
+              guix archive --export "$store_path" | gzip > nars/sysroot-xous-elf.nar.gz
+            fi
+          fi
+
+      - name: Upload nar archive
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sysroot-xous-elf-${{ matrix.channels }}
+          path: nars/
+          if-no-files-found: warn
+
+  # Toolchain: rust-xous (depends on sysroots)
+  rust-xous:
+    needs: [rust-sysroot-riscv32imac-none-elf, xous-sysroot]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build rust-xous-toolchain
+        run: make CHANNELS=${{ matrix.channels }} ROOT=rust-xous toolchain
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 toolchain
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## rust-xous-toolchain (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f rust-xous 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Export nar archive
+        if: success()
+        run: |
+          mkdir -p nars
+          if [ -L rust-xous ]; then
+            store_path=$(readlink -f rust-xous)
+            if [ -d "$store_path" ]; then
+              guix archive --export "$store_path" | gzip > nars/rust-xous.nar.gz
+            fi
+          fi
+
+      - name: Upload nar archive
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-xous-${{ matrix.channels }}
+          path: nars/
+          if-no-files-found: warn
+
+  # Firmware: bao1x-boot0
+  bao1x-boot0:
+    needs: [rust-xous]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build bao1x-boot0
+        run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot0 boot0
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 boot0
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## bao1x-boot0 (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f bao1x-boot0 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          for f in bao1x-boot0/*.uf2 bao1x-boot0/*.img bao1x-boot0/*.bin; do
+            [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp bao1x-boot0/*.uf2 artifacts/ 2>/dev/null || true
+          cp bao1x-boot0/*.img artifacts/ 2>/dev/null || true
+          cp bao1x-boot0/*.bin artifacts/ 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bao1x-boot0-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
+
+  # Firmware: bao1x-boot1
+  bao1x-boot1:
+    needs: [rust-xous]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build bao1x-boot1
+        run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot1 boot1
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 boot1
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## bao1x-boot1 (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f bao1x-boot1 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          for f in bao1x-boot1/*.uf2 bao1x-boot1/*.img bao1x-boot1/*.bin; do
+            [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp bao1x-boot1/*.uf2 artifacts/ 2>/dev/null || true
+          cp bao1x-boot1/*.img artifacts/ 2>/dev/null || true
+          cp bao1x-boot1/*.bin artifacts/ 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bao1x-boot1-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
+
+  # Firmware: bao1x-alt-boot1
+  bao1x-alt-boot1:
+    needs: [rust-xous]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build bao1x-alt-boot1
+        run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-alt-boot1 alt-boot1
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 alt-boot1
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## bao1x-alt-boot1 (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f bao1x-alt-boot1 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          for f in bao1x-alt-boot1/*.uf2 bao1x-alt-boot1/*.img bao1x-alt-boot1/*.bin; do
+            [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp bao1x-alt-boot1/*.uf2 artifacts/ 2>/dev/null || true
+          cp bao1x-alt-boot1/*.img artifacts/ 2>/dev/null || true
+          cp bao1x-alt-boot1/*.bin artifacts/ 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bao1x-alt-boot1-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
+
+  # Firmware: bao1x-baremetal-dabao
+  bao1x-baremetal-dabao:
+    needs: [rust-xous]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build bao1x-baremetal-dabao
+        run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-baremetal-dabao baremetal-dabao
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 baremetal-dabao
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## bao1x-baremetal-dabao (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f bao1x-baremetal-dabao 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          for f in bao1x-baremetal-dabao/*.uf2 bao1x-baremetal-dabao/*.img bao1x-baremetal-dabao/*.bin; do
+            [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp bao1x-baremetal-dabao/*.uf2 artifacts/ 2>/dev/null || true
+          cp bao1x-baremetal-dabao/*.img artifacts/ 2>/dev/null || true
+          cp bao1x-baremetal-dabao/*.bin artifacts/ 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bao1x-baremetal-dabao-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
+
+  # Firmware: dabao
+  dabao:
+    needs: [rust-xous]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build dabao
+        run: make CHANNELS=${{ matrix.channels }} ROOT=dabao dabao
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 dabao
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## dabao (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f dabao 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          for f in dabao/*.uf2 dabao/*.img dabao/*.bin; do
+            [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp dabao/*.uf2 artifacts/ 2>/dev/null || true
+          cp dabao/*.img artifacts/ 2>/dev/null || true
+          cp dabao/*.bin artifacts/ 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dabao-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
+
+  # Firmware: dabao-helloworld
+  dabao-helloworld:
+    needs: [rust-xous]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build dabao-helloworld
+        run: make CHANNELS=${{ matrix.channels }} ROOT=dabao-helloworld dabao-helloworld
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 dabao-helloworld
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## dabao-helloworld (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f dabao-helloworld 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          for f in dabao-helloworld/*.uf2 dabao-helloworld/*.img dabao-helloworld/*.bin; do
+            [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp dabao-helloworld/*.uf2 artifacts/ 2>/dev/null || true
+          cp dabao-helloworld/*.img artifacts/ 2>/dev/null || true
+          cp dabao-helloworld/*.bin artifacts/ 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dabao-helloworld-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
+
+  # Firmware: baosec
+  baosec:
+    needs: [rust-xous]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build baosec
+        run: make CHANNELS=${{ matrix.channels }} ROOT=baosec baosec
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 baosec
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## baosec (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f baosec 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          for f in baosec/*.uf2 baosec/*.img baosec/*.bin; do
+            [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp baosec/*.uf2 artifacts/ 2>/dev/null || true
+          cp baosec/*.img artifacts/ 2>/dev/null || true
+          cp baosec/*.bin artifacts/ 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baosec-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn

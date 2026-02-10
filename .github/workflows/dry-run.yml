@@ -1,0 +1,118 @@
+name: Dry-run builds
+
+on:
+  push:
+    branches: [main, ci*]
+    tags: ['v*', 'xous-core-*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Dry-run all packages
+        id: dry-run
+        run: |
+          mkdir -p /tmp/drv
+
+          echo "## Dry-run Results (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Toolchain packages
+          echo "### Toolchain Packages" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "#### rust-sysroot-riscv32imac-none-elf" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          make DRY=1 CHANNELS=${{ matrix.channels }} rv32imac-none 2>&1 | tee /tmp/drv/rv32imac-none.log
+          DRV=$(grep -E "^/gnu/store/.*\.drv$" /tmp/drv/rv32imac-none.log | head -1 || true)
+          if [ -n "$DRV" ]; then
+            echo "$DRV" >> $GITHUB_STEP_SUMMARY
+            echo "rv32imac_none_drv=$DRV" >> $GITHUB_OUTPUT
+          else
+            echo "No derivation found" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "#### rust-sysroot-riscv32imac-xous-elf (xous-sysroot)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          make DRY=1 CHANNELS=${{ matrix.channels }} rv32imac-xous 2>&1 | tee /tmp/drv/rv32imac-xous.log
+          DRV=$(grep -E "^/gnu/store/.*\.drv$" /tmp/drv/rv32imac-xous.log | head -1 || true)
+          if [ -n "$DRV" ]; then
+            echo "$DRV" >> $GITHUB_STEP_SUMMARY
+            echo "rv32imac_xous_drv=$DRV" >> $GITHUB_OUTPUT
+          else
+            echo "No derivation found" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "#### rust-xous-toolchain" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          make DRY=1 CHANNELS=${{ matrix.channels }} toolchain 2>&1 | tee /tmp/drv/toolchain.log
+          DRV=$(grep -E "^/gnu/store/.*\.drv$" /tmp/drv/toolchain.log | head -1 || true)
+          if [ -n "$DRV" ]; then
+            echo "$DRV" >> $GITHUB_STEP_SUMMARY
+            echo "toolchain_drv=$DRV" >> $GITHUB_OUTPUT
+          else
+            echo "No derivation found" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Firmware packages
+          echo "### Firmware Packages" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          for pkg in boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec; do
+            echo "#### $pkg" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            make DRY=1 CHANNELS=${{ matrix.channels }} $pkg 2>&1 | tee /tmp/drv/${pkg}.log
+            DRV=$(grep -E "^/gnu/store/.*\.drv$" /tmp/drv/${pkg}.log | head -1 || true)
+            if [ -n "$DRV" ]; then
+              echo "$DRV" >> $GITHUB_STEP_SUMMARY
+              # Convert pkg name to valid output name (replace - with _)
+              OUTPUT_NAME=$(echo "$pkg" | tr '-' '_')
+              echo "${OUTPUT_NAME}_drv=$DRV" >> $GITHUB_OUTPUT
+            else
+              echo "No derivation found" >> $GITHUB_STEP_SUMMARY
+            fi
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          done
+
+      - name: Derivation path summary
+        run: |
+          echo "## Derivation Path Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Derivation Path |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----------------|" >> $GITHUB_STEP_SUMMARY
+
+          for f in /tmp/drv/*.log; do
+            pkg=$(basename "$f" .log)
+            drv=$(grep -E "^/gnu/store/.*\.drv$" "$f" | head -1 || true)
+            if [ -n "$drv" ]; then
+              echo "| $pkg | \`$drv\` |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| $pkg | (failed) |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
