@@ -122,9 +122,38 @@ jobs:
           path: nars/
           if-no-files-found: warn
 
+  # Gate: check if at least one sysroot channel succeeded
+  sysroot-ready:
+    needs: [rust-sysroot-riscv32imac-none-elf, xous-sysroot]
+    if: always()
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Download sysroot artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sysroot-*
+          merge-multiple: true
+          path: artifacts
+        continue-on-error: true
+
+      - name: Check if any channel succeeded
+        id: check
+        run: |
+          if ls artifacts/*.nar.gz 2>/dev/null; then
+            echo "ready=true" >> $GITHUB_OUTPUT
+            echo "✓ At least one sysroot channel succeeded"
+          else
+            echo "ready=false" >> $GITHUB_OUTPUT
+            echo "✗ Both sysroot channels failed"
+            exit 1
+          fi
+
   # Toolchain: rust-xous (depends on sysroots)
   rust-xous:
-    needs: [rust-sysroot-riscv32imac-none-elf, xous-sysroot]
+    needs: [sysroot-ready]
+    if: ${{ needs.sysroot-ready.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -180,9 +209,38 @@ jobs:
           path: nars/
           if-no-files-found: warn
 
+  # Gate: check if at least one toolchain channel succeeded
+  toolchain-ready:
+    needs: [rust-xous]
+    if: always()
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Download toolchain artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: rust-xous-*
+          merge-multiple: true
+          path: artifacts
+        continue-on-error: true
+
+      - name: Check if any channel succeeded
+        id: check
+        run: |
+          if ls artifacts/*.nar.gz 2>/dev/null; then
+            echo "ready=true" >> $GITHUB_OUTPUT
+            echo "✓ At least one toolchain channel succeeded"
+          else
+            echo "ready=false" >> $GITHUB_OUTPUT
+            echo "✗ Both toolchain channels failed"
+            exit 1
+          fi
+
   # Firmware: bao1x-boot0
   bao1x-boot0:
-    needs: [rust-xous]
+    needs: [toolchain-ready]
+    if: ${{ needs.toolchain-ready.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -246,7 +304,8 @@ jobs:
 
   # Firmware: bao1x-boot1
   bao1x-boot1:
-    needs: [rust-xous]
+    needs: [toolchain-ready]
+    if: ${{ needs.toolchain-ready.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -310,7 +369,8 @@ jobs:
 
   # Firmware: bao1x-alt-boot1
   bao1x-alt-boot1:
-    needs: [rust-xous]
+    needs: [toolchain-ready]
+    if: ${{ needs.toolchain-ready.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -374,7 +434,8 @@ jobs:
 
   # Firmware: bao1x-baremetal-dabao
   bao1x-baremetal-dabao:
-    needs: [rust-xous]
+    needs: [toolchain-ready]
+    if: ${{ needs.toolchain-ready.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -438,7 +499,8 @@ jobs:
 
   # Firmware: dabao
   dabao:
-    needs: [rust-xous]
+    needs: [toolchain-ready]
+    if: ${{ needs.toolchain-ready.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -502,7 +564,8 @@ jobs:
 
   # Firmware: dabao-helloworld
   dabao-helloworld:
-    needs: [rust-xous]
+    needs: [toolchain-ready]
+    if: ${{ needs.toolchain-ready.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -566,7 +629,8 @@ jobs:
 
   # Firmware: baosec
   baosec:
-    needs: [rust-xous]
+    needs: [toolchain-ready]
+    if: ${{ needs.toolchain-ready.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
