@@ -35,7 +35,7 @@
 (define %xous-hash "08mm154b01gnjr4q4f13bxpwd77v3xh2nygkjll9d2k18k8gdzmv")
 
 ;; Version string (e.g., "v0.9.16-0-gabcd1234" or just "v0.9.16")
-;; v0.9.16-2729-g24b7d0bf5
+;; v0.10.0-6-gb7db559fd
 (define %xous-version "0.10.0")
 
 ;; Short hash for display (first 8 chars of commit)
