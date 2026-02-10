@@ -318,7 +318,6 @@
               (setenv "CARGO_INCREMENTAL" "0")
               (setenv "RUSTFLAGS" (string-append "-C codegen-units=1 --remap-path-prefix="
                                                  (getcwd) "=/build"))
-              (setenv "SOURCE_DATE_EPOCH" "1")
               ;;(invoke "cargo" "xtask" #$@(string-split xtask-cmd #\space) "--no-verify" "--no-timestamp")))
               (invoke "cargo" "xtask" #$@(string-split xtask-cmd #\space) "--no-verify")))
 
