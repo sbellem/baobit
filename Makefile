@@ -53,7 +53,7 @@ ifdef ROOT
   TM += --root=$(ROOT)
 endif
 ifdef CHECK
-  TM += --check
+  TM += --check --keep-failed
 endif
 
 .PHONY: help rust-1.91 rust-1.92 rust-1.93 \
