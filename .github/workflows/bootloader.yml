@@ -1,0 +1,69 @@
+name: Build bootloader
+
+on:
+  push:
+    branches: [main, ci*]
+  workflow_dispatch:
+
+jobs:
+  bao1x-boot0:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build bao1x-boot0
+        run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot0 boot0
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 boot0
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## bao1x-boot0 (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f bao1x-boot0 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifact Checksums (SHA256)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          for f in bao1x-boot0/*.uf2 bao1x-boot0/*.img bao1x-boot0/*.bin; do
+            [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp bao1x-boot0/*.uf2 artifacts/ 2>/dev/null || true
+          cp bao1x-boot0/*.img artifacts/ 2>/dev/null || true
+          cp bao1x-boot0/*.bin artifacts/ 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bao1x-boot0-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
