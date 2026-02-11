@@ -15,6 +15,13 @@
   (string-append "https://github.com/" %xous-owner "/xous-core"))
 (define %config-file "packages/xous-core-config.scm")
 
+;; ANSI colors
+(define %red "\x1b[31m")
+(define %blue "\x1b[34m")
+(define %green "\x1b[32m")
+(define %cyan "\x1b[36m")
+(define %reset "\x1b[0m")
+
 (define (run-command cmd)
   "Run CMD and return stdout as string, trimmed."
   (let* ((port (open-input-pipe cmd))
@@ -24,6 +31,12 @@
 
 (define (make-temp-dir)
   (run-command "mktemp -d"))
+
+(define (run-git . args)
+  "Run git with ARGS, showing the command. Error if non-zero exit."
+  (format #t "  ~a$ git ~a~a~%~%" %blue (string-join args " ") %reset)
+  (unless (zero? (apply system* "git" args))
+    (error "git command failed")))
 
 (define (update-config-hash! hash)
   "Update %xous-hash in the config file."
@@ -45,24 +58,23 @@
     (dynamic-wind
       (lambda () #t)
       (lambda ()
-        (format #t "commit=~a~%" %xous-commit)
-        (format #t "cloning ~a (depth ~a)...~%" %xous-url %xous-clone-depth)
-        (unless (zero? (system* "git" "clone" "--depth" (number->string %xous-clone-depth)
-                                "--tags" %xous-url tmpdir "--quiet"))
-          (error "git clone failed"))
+        (format #t "~%")
+        (run-git "clone" "--depth" (number->string %xous-clone-depth)
+                 "--tags" %xous-url tmpdir)
         (chdir tmpdir)
-        (unless (zero? (system* "git" "fetch" "--depth" (number->string %xous-clone-depth)
-                                "origin" %xous-commit "--quiet"))
-          (error "git fetch failed - commit not found or need more depth"))
-        (unless (zero? (system* "git" "checkout" %xous-commit "--quiet"))
-          (error "git checkout failed"))
+        (run-git "fetch" "--depth" (number->string %xous-clone-depth)
+                 "origin" %xous-commit)
+        (run-git "-c" "advice.detachedHead=false" "checkout" %xous-commit)
         (let ((describe (run-command "git describe"))
               (hash (run-command "guix hash -rx .")))
-          (format #t "describe=~a~%" describe)
-          (format #t "hash=~a~%" hash)
+          (format #t "~%")
+          (format #t "  commit:  ~a~a~a~%" %red %xous-commit %reset)
+          (format #t "  version: ~a~a~a~%" %green describe %reset)
+          (format #t "  hash:    ~a~a~a~%" %cyan hash %reset)
+          (format #t "~%")
           (chdir start-dir)
           (update-config-hash! hash)
-          (format #t "~%Updated ~a with hash.~%" %config-file)))
+          (format #t "~a✓ Updated ~a~a~%~%" %cyan %config-file %reset)))
       (lambda ()
         (chdir start-dir)
         (system* "rm" "-rf" tmpdir)))))
