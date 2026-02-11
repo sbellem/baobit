@@ -38,16 +38,12 @@
   (unless (zero? (apply system* "git" args))
     (error "git command failed")))
 
-(define (update-config-hash! hash)
-  "Update %xous-hash in the config file."
+(define (update-config! var value)
+  "Update VAR in the config file with VALUE."
   (let* ((content (call-with-input-file %config-file get-string-all))
-         (updated (regexp-substitute/global
-                   #f
-                   "\\(define %xous-hash \"[^\"]*\"\\)"
-                   content
-                   'pre
-                   (string-append "(define %xous-hash \"" hash "\")")
-                   'post)))
+         (pattern (string-append "\\(define " var " \"[^\"]*\"\\)"))
+         (replacement (string-append "(define " var " \"" value "\")"))
+         (updated (regexp-substitute/global #f pattern content 'pre replacement 'post)))
     (call-with-output-file %config-file
       (lambda (port)
         (put-string port updated)))))
@@ -65,7 +61,7 @@
         (run-git "fetch" "--depth" (number->string %xous-clone-depth)
                  "origin" %xous-commit)
         (run-git "-c" "advice.detachedHead=false" "checkout" %xous-commit)
-        (let ((describe (run-command "git describe"))
+        (let ((describe (run-command "git describe --long"))
               (hash (run-command "guix hash -rx .")))
           (format #t "~%")
           (format #t "  commit:  ~a~a~a~%" %red %xous-commit %reset)
@@ -73,7 +69,8 @@
           (format #t "  hash:    ~a~a~a~%" %cyan hash %reset)
           (format #t "~%")
           (chdir start-dir)
-          (update-config-hash! hash)
+          (update-config! "%xous-version" describe)
+          (update-config! "%xous-hash" hash)
           (format #t "~a✓ Updated ~a~a~%~%" %cyan %config-file %reset)))
       (lambda ()
         (chdir start-dir)

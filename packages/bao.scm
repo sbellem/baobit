@@ -306,8 +306,8 @@
               (setenv "CARGO_INCREMENTAL" "0")
               (setenv "RUSTFLAGS" (string-append "-C codegen-units=1 --remap-path-prefix="
                                                  (getcwd) "=/build"))
-              ;;(invoke "cargo" "xtask" #$@(string-split xtask-cmd #\space) "--no-verify" "--no-timestamp")))
-              (invoke "cargo" "xtask" #$@(string-split xtask-cmd #\space) "--no-verify")))
+              (invoke "cargo" "xtask" #$@(string-split xtask-cmd #\space)
+                      "--no-verify" "--gitrev" #$%xous-version)))
 
           ;; Phase 7: Install
           (replace 'install

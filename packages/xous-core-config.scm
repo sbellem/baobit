@@ -14,11 +14,11 @@
 ;; GitHub owner (user or org)
 (define %xous-owner "betrusted-io")
 
-(define %xous-version "0.10.0")
+(define %xous-version "v0.10.0-19-g0d934e1")
 
 (define %xous-commit "0d934e1078955c46abc7d6f9f6eb44956f12751a")
 
 (define %xous-hash "17gibh0z7j1kz5i96xbwq7s4nlp6gxnpnsn0j8arihl9sgnzvbqf")
 
 ;; Git clone depth for xous-core-info.scm (increase if git describe fails)
-(define %xous-clone-depth 20)
+(define %xous-clone-depth 40)
