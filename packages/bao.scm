@@ -125,9 +125,10 @@
                 (substitute* "tools/src/sign_image.rs"
                   (("SemVer::from_git\\(\\)\\?\\.into\\(\\)")
                    (string-append "\"" #$%xous-version "\".parse::<SemVer>().unwrap().into()"))))
-              (substitute* "xtask/src/versioning.rs"
-                (("let gitver = output\\.stdout;")
-                 "let gitver = std::env::var(\"XOUS_VERSION\").map(|s| s.into_bytes()).unwrap_or(output.stdout);"))
+              ;; Removed - --gitrev handles this (PR #809)
+              ;; (substitute* "xtask/src/versioning.rs"
+              ;;   (("let gitver = output\\.stdout;")
+              ;;    "let gitver = std::env::var(\"XOUS_VERSION\").map(|s| s.into_bytes()).unwrap_or(output.stdout);"))
               (when (file-exists? "tools/src/swap_writer.rs")
                 (substitute* "tools/src/swap_writer.rs"
                   (("Command::new\\(\"git\"\\)\\.args\\(&\\[\"rev-parse\", \"HEAD\"\\]\\)\\.output\\(\\)\\.expect\\(\"Failed to execute command\"\\)")
