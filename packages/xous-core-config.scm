@@ -1,5 +1,7 @@
 (define-module (xous-core-config)
-  #:export (%xous-commit %xous-hash %xous-version %xous-clone-depth %xous-owner))
+  #:use-module (gnu packages rust)
+  #:export (%xous-commit %xous-hash %xous-version %xous-clone-depth %xous-owner
+            %rust))
 
 ;;; Xous-core release configuration
 ;;;
@@ -22,3 +24,6 @@
 
 ;; Git clone depth for xous-core-info.scm (increase if git describe fails)
 (define %xous-clone-depth 40)
+
+;; Rust toolchain (change to rust-1.91, rust-1.92, etc. as needed)
+(define %rust rust-1.90)

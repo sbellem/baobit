@@ -26,7 +26,8 @@
   #:use-module (gnu packages version-control)
   #:use-module (gnu packages rust)
   #:use-module (embedded)
-  #:use-module (xous-sysroot-crates))
+  #:use-module (xous-sysroot-crates)
+  #:use-module (xous-core-config))
 
 
 ;;;
@@ -207,8 +208,8 @@
                  (find-files "library/target/riscv32imac-unknown-xous-elf/release/deps"
                              "\\.rlib$"))))))))
     (native-inputs
-     `(("rust" ,rust-1.90)
-       ("rust:cargo" ,rust-1.90 "cargo")
+     `(("rust" ,%rust)
+       ("rust:cargo" ,%rust "cargo")
        ("gcc-toolchain" ,gcc-toolchain)
        ("git" ,git)
        ("tar" ,tar)
@@ -273,7 +274,7 @@ applications.  This package propagates lld-18 as the linker.")
              (string-append rustlib-out
                             "/riscv32imac-unknown-xous-elf"))))))
     (inputs
-     `(("rust" ,rust-1.90)
+     `(("rust" ,%rust)
        ("bare-metal-sysroot" ,rust-sysroot-riscv32imac-none-elf)
        ("xous-sysroot" ,rust-sysroot-riscv32imac-xous-elf)))
     (home-page "https://github.com/betrusted-io/rust")
@@ -341,8 +342,8 @@ targets for Xous development.")
              '("rustfmt" "cargo-fmt" "clippy-driver" "cargo-clippy"
                "rust-analyzer" "rustdoc"))))))
     (inputs
-     `(("rust" ,rust-1.90)
-       ("rust:cargo" ,rust-1.90 "cargo")
+     `(("rust" ,%rust)
+       ("rust:cargo" ,%rust "cargo")
        ("rust-sysroot-merged" ,rust-sysroot-merged)
        ("gcc-toolchain" ,gcc-toolchain)
        ("bash" ,bash)))
