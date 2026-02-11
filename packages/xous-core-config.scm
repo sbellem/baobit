@@ -1,5 +1,5 @@
 (define-module (xous-core-config)
-  #:export (%xous-commit %xous-hash %xous-version %xous-clone-depth))
+  #:export (%xous-commit %xous-hash %xous-version %xous-clone-depth %xous-owner))
 
 ;;; Xous-core release configuration
 ;;;
@@ -11,11 +11,14 @@
 ;;; If you see "fatal: No names found, cannot describe anything",
 ;;; increase %xous-clone-depth (need more history to reach a tag).
 
-(define %xous-commit "893057958027dce8b5ab11b2ddacfc504fe20781")
+;; GitHub owner (user or org)
+(define %xous-owner "betrusted-io")
 
 (define %xous-version "0.10.0")
 
-(define %xous-hash "0031fw8w63ah3araqj5d1gyr5gcsvhf17x1b4xsmldkzns5j2b41")
+(define %xous-commit "0d934e1078955c46abc7d6f9f6eb44956f12751a")
+
+(define %xous-hash "17gibh0z7j1kz5i96xbwq7s4nlp6gxnpnsn0j8arihl9sgnzvbqf")
 
 ;; Git clone depth for xous-core-info.scm (increase if git describe fails)
 (define %xous-clone-depth 20)

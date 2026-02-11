@@ -37,7 +37,7 @@
   (origin
     (method git-fetch)
     (uri (git-reference
-          (url "https://github.com/betrusted-io/xous-core")
+          (url (string-append "https://github.com/" %xous-owner "/xous-core"))
           (commit %xous-commit)))
     (file-name (git-file-name "xous-core" %xous-version))
     (sha256 (base32 %xous-hash))))
