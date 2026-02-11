@@ -3,10 +3,7 @@
 ;;; This module provides packages for building Xous firmware images
 ;;; using git-fetch for reproducible builds across machines.
 ;;;
-;;; IMPORTANT: When updating xous-core version:
-;;; 1. Update %xous-commit and %xous-hash below
-;;; 2. Update %xous-version to match the release
-;;; 3. Copy matching bao-crates.scm from xous-core/guix/
+;;; IMPORTANT: When updating xous-core version, edit xous-core-config.scm
 
 (define-module (bao)
   #:use-module (guix packages)
@@ -22,21 +19,12 @@
   #:use-module (gnu packages commencement)
   #:use-module (srfi srfi-1)
   #:use-module (rust-xous-toolchain)
-  #:use-module (bao-crates))
+  #:use-module (bao-crates)
+  #:use-module (xous-core-config))
 
 ;;; =============================================================
-;;; VERSION CONFIGURATION - Update these for each release
+;;; VERSION CONFIGURATION - See xous-core-config.scm
 ;;; =============================================================
-
-;; Git commit hash for xous-core (full 40 chars)
-(define %xous-commit "13c92a7f7f68d4ef3145a85dacd2935d5e9742b6")
-
-;; SHA256 hash of the git checkout (get with: guix hash -rx <checkout>)
-(define %xous-hash "0141a1zl03ypksjsi31smmypim3cvqd7m6y0r823d3wv6g6f4wzx")
-
-;; Version string (e.g., "v0.9.16-0-gabcd1234" or just "v0.9.16")
-;; v0.10.0-6-gb7db559fd
-(define %xous-version "0.10.0")
 
 ;; Short hash for display (first 8 chars of commit)
 (define %xous-short-hash (substring %xous-commit 0 8))
@@ -49,7 +37,7 @@
   (origin
     (method git-fetch)
     (uri (git-reference
-          (url "https://github.com/sbellem/xous-core")
+          (url "https://github.com/betrusted-io/xous-core")
           (commit %xous-commit)))
     (file-name (git-file-name "xous-core" %xous-version))
     (sha256 (base32 %xous-hash))))
