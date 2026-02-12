@@ -26,4 +26,4 @@
 
 ;; Rust toolchain version (e.g., "1.90", "1.91")
 ;; Package modules resolve this to rust-X.YZ
-(define %rust-version "1.93")
+(define %rust-version "1.90")
