@@ -24,7 +24,7 @@
   #:use-module (guix utils)
   #:use-module (guix platform)
   #:use-module ((guix licenses) #:prefix license:)
-  #:use-module (xous-core-config))
+  #:use-module (xous-config))
 
 ;;; Commentary:
 ;;;

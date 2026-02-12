@@ -58,7 +58,7 @@ endif
 
 .PHONY: help rust-1.91 rust-1.92 rust-1.93 \
         rv32imac-none rv32imac-xous toolchain \
-        boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec \
+        boot0 boot1 alt-boot1 bootloader baremetal-dabao dabao dabao-helloworld baosec \
         all-dry dry-toolchain xous-core-info
 
 help:
@@ -71,8 +71,9 @@ help:
 	@echo "    toolchain        - rust-xous-toolchain (both sysroots)"
 	@echo "  Firmware:"
 	@echo "    boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec"
+	@echo "    bootloader       - build all bootloaders (boot0 + boot1 + alt-boot1)"
 	@echo "  Release helpers:"
-	@echo "    xous-core-info   - get git describe + hash for commit in xous-core-config.scm"
+	@echo "    xous-core-info   - get git describe + hash for commit in xous-config.scm"
 	@echo ""
 	@echo "Options:"
 	@echo "  CHANNELS=file.scm  - use different channels file"
@@ -116,6 +117,8 @@ boot1:
 alt-boot1:
 	$(TM) -e '(@ (bao) bao1x-alt-boot1)'
 
+bootloader: boot0 boot1 alt-boot1
+
 baremetal-dabao:
 	$(TM) -e '(@ (bao) bao1x-baremetal-dabao)'
 
@@ -135,6 +138,6 @@ all-dry:
 dry-toolchain:
 	$(MAKE) DRY=1 toolchain
 
-# Get xous-core info (git describe + guix hash) for commit in xous-core-config.scm
+# Get xous-core info (git describe + guix hash) for commit in xous-config.scm
 xous-core-info:
 	./xous-core-info.scm

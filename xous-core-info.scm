@@ -1,11 +1,11 @@
 #!/usr/bin/env -S guix repl -L packages
 !#
-;;; Get git describe and guix hash for the commit in xous-core-config.scm
+;;; Get git describe and guix hash for the commit in xous-config.scm
 ;;;
 ;;; Usage: ./xous-core-info.scm
 ;;;    or: guix repl -L packages xous-core-info.scm
 
-(use-modules (xous-core-config)
+(use-modules (xous-config)
              (ice-9 popen)
              (ice-9 rdelim)
              (ice-9 textual-ports)
@@ -14,7 +14,7 @@
 (define %xous-url
   (string-append "https://github.com/" %xous-owner "/xous-core"))
 (define %upstream-url "https://github.com/betrusted-io/xous-core")
-(define %config-file "packages/xous-core-config.scm")
+(define %config-file "packages/xous-config.scm")
 
 ;; ANSI colors
 (define %red "\x1b[31m")

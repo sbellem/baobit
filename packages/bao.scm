@@ -3,7 +3,7 @@
 ;;; This module provides packages for building Xous firmware images
 ;;; using git-fetch for reproducible builds across machines.
 ;;;
-;;; IMPORTANT: When updating xous-core version, edit xous-core-config.scm
+;;; IMPORTANT: When updating xous-core version, edit xous-config.scm
 
 (define-module (bao)
   #:use-module (guix packages)
@@ -20,10 +20,10 @@
   #:use-module (srfi srfi-1)
   #:use-module (rust-xous-toolchain)
   #:use-module (bao-crates)
-  #:use-module (xous-core-config))
+  #:use-module (xous-config))
 
 ;;; =============================================================
-;;; VERSION CONFIGURATION - See xous-core-config.scm
+;;; VERSION CONFIGURATION - See xous-config.scm
 ;;; =============================================================
 
 ;; Short hash for display (first 8 chars of commit)
