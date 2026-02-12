@@ -61,7 +61,7 @@
         (run-git "fetch" "--depth" (number->string %xous-clone-depth)
                  "origin" %xous-commit)
         (run-git "-c" "advice.detachedHead=false" "checkout" %xous-commit)
-        (let ((describe (run-command "git describe --long"))
+        (let ((describe (run-command "git describe --long --abbrev=9"))
               (hash (run-command "guix hash -rx .")))
           (format #t "~%")
           (format #t "  commit:  ~a~a~a~%" %red %xous-commit %reset)

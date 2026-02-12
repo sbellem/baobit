@@ -36,6 +36,11 @@
 ;;;
 ;;; Code:
 
+;; Resolve %rust-version string to actual rust package
+(define %rust
+  (module-ref (resolve-module '(gnu packages rust))
+              (string->symbol (string-append "rust-" %rust-version))))
+
 (define-public rust-sysroot-riscv32imac-none-elf
   (package
     (inherit %rust)

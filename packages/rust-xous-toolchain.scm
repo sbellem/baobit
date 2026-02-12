@@ -29,6 +29,11 @@
   #:use-module (xous-sysroot-crates)
   #:use-module (xous-core-config))
 
+;; Resolve %rust-version string to actual rust package
+(define %rust
+  (module-ref (resolve-module '(gnu packages rust))
+              (string->symbol (string-append "rust-" %rust-version))))
+
 
 ;;;
 ;;; Xous sysroot (riscv32imac-unknown-xous-elf)

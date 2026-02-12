@@ -1,7 +1,6 @@
 (define-module (xous-core-config)
-  #:use-module (gnu packages rust)
   #:export (%xous-commit %xous-hash %xous-version %xous-clone-depth %xous-owner
-            %rust))
+            %rust-version))
 
 ;;; Xous-core release configuration
 ;;;
@@ -16,14 +15,15 @@
 ;; GitHub owner (user or org)
 (define %xous-owner "betrusted-io")
 
-(define %xous-version "v0.10.0-19-g0d934e1")
+(define %xous-version "v0.10.0-25-g94e4fc28d")
 
-(define %xous-commit "0d934e1078955c46abc7d6f9f6eb44956f12751a")
+(define %xous-commit "94e4fc28d8976e49375ca583c5ff08b62e001c4a")
 
-(define %xous-hash "17gibh0z7j1kz5i96xbwq7s4nlp6gxnpnsn0j8arihl9sgnzvbqf")
+(define %xous-hash "15d0dyc312cplya0w71waqlvlslxmlcjlvvgm7k814d3am811hla")
 
 ;; Git clone depth for xous-core-info.scm (increase if git describe fails)
-(define %xous-clone-depth 40)
+(define %xous-clone-depth 50)
 
-;; Rust toolchain (change to rust-1.91, rust-1.92, etc. as needed)
-(define %rust rust-1.90)
+;; Rust toolchain version (e.g., "1.90", "1.91")
+;; Package modules resolve this to rust-X.YZ
+(define %rust-version "1.93")
