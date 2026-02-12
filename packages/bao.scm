@@ -39,8 +39,8 @@
     (uri (git-reference
           (url (string-append "https://github.com/" %xous-owner "/xous-core"))
           (commit %xous-commit)))
-    (file-name (git-file-name "xous-core" %xous-version))
-    (sha256 (base32 %xous-hash))))
+    (file-name (git-file-name "xous-core" %xous-git-describe))
+    (sha256 (base32 %xous-guix-hash))))
 
 ;;; Git dependency metadata
 ;;; Each entry: (input-name origin git-url ((crate-name . subdir) ...))
@@ -108,7 +108,7 @@
                                (crate-inputs '()))
   (package
     (name name)
-    (version %xous-version)
+    (version %xous-git-describe)
     (source xous-core-source)
     (build-system gnu-build-system)
     (arguments
@@ -118,29 +118,8 @@
           (delete 'configure)
           (delete 'check)
 
-          ;; Phase 1: Patch versioning to use fixed values
-          (add-after 'unpack 'patch-versioning
-            (lambda _
-              (when (file-exists? "tools/src/sign_image.rs")
-                (substitute* "tools/src/sign_image.rs"
-                  (("SemVer::from_git\\(\\)\\?\\.into\\(\\)")
-                   (string-append "\"" #$%xous-version "\".parse::<SemVer>().unwrap().into()"))))
-              ;; Removed - --gitrev handles this (PR #809)
-              ;; (substitute* "xtask/src/versioning.rs"
-              ;;   (("let gitver = output\\.stdout;")
-              ;;    "let gitver = std::env::var(\"XOUS_VERSION\").map(|s| s.into_bytes()).unwrap_or(output.stdout);"))
-              (when (file-exists? "tools/src/swap_writer.rs")
-                (substitute* "tools/src/swap_writer.rs"
-                  (("Command::new\\(\"git\"\\)\\.args\\(&\\[\"rev-parse\", \"HEAD\"\\]\\)\\.output\\(\\)\\.expect\\(\"Failed to execute command\"\\)")
-                   (string-append
-                    "std::env::var(\"GIT_REV\").map(|s| std::process::Output { "
-                    "status: std::process::ExitStatus::default(), "
-                    "stdout: s.into_bytes(), stderr: vec![] }).unwrap_or_else(|_| "
-                    "Command::new(\"git\").args(&[\"rev-parse\", \"HEAD\"]).output()"
-                    ".expect(\"Failed to execute command\"))"))))))
-
-          ;; Phase 2: Set up crates.io vendor directory
-          (add-after 'patch-versioning 'setup-vendor
+          ;; Phase 1: Set up crates.io vendor directory
+          (add-after 'unpack 'setup-vendor
             (lambda* (#:key inputs #:allow-other-keys)
               (use-modules (ice-9 popen)
                            (ice-9 rdelim))
@@ -165,7 +144,7 @@
                              (format port "{\"files\":{},\"package\":\"~a\"}" checksum)))))))
                  inputs))))
 
-          ;; Phase 3: Set up git dependencies
+          ;; Phase 2: Set up git dependencies
           (add-after 'setup-vendor 'setup-git-deps
             (lambda* (#:key inputs #:allow-other-keys)
               (use-modules (ice-9 textual-ports)
@@ -216,7 +195,7 @@
                                (display (string-join filtered "\n") port))))))))
                  (find-files git-vendor-dir "^Cargo\\.toml$")))))
 
-          ;; Phase 4: Patch Cargo.toml files to convert git deps to path deps
+          ;; Phase 3: Patch Cargo.toml files to convert git deps to path deps
           (add-after 'setup-git-deps 'patch-cargo-toml-git-deps
             (lambda _
               (use-modules (ice-9 textual-ports)
@@ -256,7 +235,7 @@
                              (display modified port)))))))
                  (find-files "." "^Cargo\\.toml$")))))
 
-          ;; Phase 5: Set up cargo config
+          ;; Phase 4: Set up cargo config
           (add-after 'patch-cargo-toml-git-deps 'setup-cargo
             (lambda* (#:key inputs #:allow-other-keys)
               (let* ((rust-xous (assoc-ref inputs "rust-xous"))
@@ -299,18 +278,18 @@
                 (call-with-output-file "locales/.cargo/config.toml"
                   (lambda (port) (display vendor-config port))))))
 
-          ;; Phase 6: Build
+          ;; Phase 5: Build
           (replace 'build
             (lambda* (#:key inputs #:allow-other-keys)
-              (setenv "XOUS_VERSION" #$%xous-version)
-              (setenv "GIT_REV" #$%xous-commit)
               (setenv "CARGO_INCREMENTAL" "0")
               (setenv "RUSTFLAGS" (string-append "-C codegen-units=1 --remap-path-prefix="
                                                  (getcwd) "=/build"))
               (invoke "cargo" "xtask" #$@(string-split xtask-cmd #\space)
-                      "--no-verify" "--gitrev" #$%xous-version)))
+                      "--no-verify"
+                      "--git-describe" #$%xous-git-describe
+                      "--git-rev" #$%xous-commit)))
 
-          ;; Phase 7: Install
+          ;; Phase 6: Install
           (replace 'install
             (lambda* (#:key outputs #:allow-other-keys)
               (let* ((out (assoc-ref outputs "out"))
@@ -388,7 +367,7 @@
 (define-public bao1x-bootloader
   (package
     (name "bao1x-bootloader")
-    (version %xous-version)
+    (version %xous-git-describe)
     (source #f)
     (build-system trivial-build-system)
     (arguments

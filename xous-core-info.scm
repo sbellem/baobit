@@ -13,6 +13,7 @@
 
 (define %xous-url
   (string-append "https://github.com/" %xous-owner "/xous-core"))
+(define %upstream-url "https://github.com/betrusted-io/xous-core")
 (define %config-file "packages/xous-core-config.scm")
 
 ;; ANSI colors
@@ -58,6 +59,10 @@
         (run-git "clone" "--depth" (number->string %xous-clone-depth)
                  "--tags" %xous-url tmpdir)
         (chdir tmpdir)
+        ;; Fetch tags from upstream (needed when building from forks)
+        (unless (string=? %xous-owner "betrusted-io")
+          (run-git "remote" "add" "upstream" %upstream-url)
+          (run-git "fetch" "--tags" "upstream"))
         (run-git "fetch" "--depth" (number->string %xous-clone-depth)
                  "origin" %xous-commit)
         (run-git "-c" "advice.detachedHead=false" "checkout" %xous-commit)
@@ -69,8 +74,8 @@
           (format #t "  hash:    ~a~a~a~%" %cyan hash %reset)
           (format #t "~%")
           (chdir start-dir)
-          (update-config! "%xous-version" describe)
-          (update-config! "%xous-hash" hash)
+          (update-config! "%xous-git-describe" describe)
+          (update-config! "%xous-guix-hash" hash)
           (format #t "~a✓ Updated ~a~a~%~%" %cyan %config-file %reset)))
       (lambda ()
         (chdir start-dir)
