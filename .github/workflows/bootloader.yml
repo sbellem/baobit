@@ -32,6 +32,21 @@ jobs:
       - name: Check reproducibility
         run: make CHANNELS=${{ matrix.channels }} CHECK=1 boot0
 
+      - name: Generate ELF analysis
+        run: make CHANNELS=${{ matrix.channels }} ROOT=boot0-elf-analysis boot0-elf-analysis
+
+      - name: Verify ELF analysis matches build
+        run: |
+          FIRMWARE_PATH=$(readlink -f bao1x-boot0)
+          REPORT_FIRMWARE=$(grep "^; Firmware:" boot0-elf-analysis/*.rpt | head -1 | awk '{print $3}')
+          if [ "$FIRMWARE_PATH" != "$REPORT_FIRMWARE" ]; then
+            echo "ERROR: ELF analysis is for different build!"
+            echo "  Built firmware: $FIRMWARE_PATH"
+            echo "  Report firmware: $REPORT_FIRMWARE"
+            exit 1
+          fi
+          echo "ELF analysis verified for: $FIRMWARE_PATH"
+
       - name: Report results
         if: always()
         run: |
@@ -47,13 +62,13 @@ jobs:
           shopt -s nullglob
           echo '**SHA256:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in bao1x-boot0/*.uf2 bao1x-boot0/*.img bao1x-boot0/*.bin; do
+          for f in bao1x-boot0/*.uf2 bao1x-boot0/*.img bao1x-boot0/*.bin bao1x-boot0/*.elf; do
             [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo '**MD5:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in bao1x-boot0/*.uf2 bao1x-boot0/*.img bao1x-boot0/*.bin; do
+          for f in bao1x-boot0/*.uf2 bao1x-boot0/*.img bao1x-boot0/*.bin bao1x-boot0/*.elf; do
             [ -f "$f" ] && md5sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           shopt -u nullglob
@@ -66,6 +81,8 @@ jobs:
           cp bao1x-boot0/*.uf2 artifacts/ 2>/dev/null || true
           cp bao1x-boot0/*.img artifacts/ 2>/dev/null || true
           cp bao1x-boot0/*.bin artifacts/ 2>/dev/null || true
+          cp bao1x-boot0/*.elf artifacts/ 2>/dev/null || true
+          cp boot0-elf-analysis/*.rpt artifacts/ 2>/dev/null || true
 
       - name: Upload artifacts
         if: success()
@@ -101,6 +118,21 @@ jobs:
       - name: Check reproducibility
         run: make CHANNELS=${{ matrix.channels }} CHECK=1 boot1
 
+      - name: Generate ELF analysis
+        run: make CHANNELS=${{ matrix.channels }} ROOT=boot1-elf-analysis boot1-elf-analysis
+
+      - name: Verify ELF analysis matches build
+        run: |
+          FIRMWARE_PATH=$(readlink -f bao1x-boot1)
+          REPORT_FIRMWARE=$(grep "^; Firmware:" boot1-elf-analysis/*.rpt | head -1 | awk '{print $3}')
+          if [ "$FIRMWARE_PATH" != "$REPORT_FIRMWARE" ]; then
+            echo "ERROR: ELF analysis is for different build!"
+            echo "  Built firmware: $FIRMWARE_PATH"
+            echo "  Report firmware: $REPORT_FIRMWARE"
+            exit 1
+          fi
+          echo "ELF analysis verified for: $FIRMWARE_PATH"
+
       - name: Report results
         if: always()
         run: |
@@ -116,13 +148,13 @@ jobs:
           shopt -s nullglob
           echo '**SHA256:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in bao1x-boot1/*.uf2 bao1x-boot1/*.img bao1x-boot1/*.bin; do
+          for f in bao1x-boot1/*.uf2 bao1x-boot1/*.img bao1x-boot1/*.bin bao1x-boot1/*.elf; do
             [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo '**MD5:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in bao1x-boot1/*.uf2 bao1x-boot1/*.img bao1x-boot1/*.bin; do
+          for f in bao1x-boot1/*.uf2 bao1x-boot1/*.img bao1x-boot1/*.bin bao1x-boot1/*.elf; do
             [ -f "$f" ] && md5sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           shopt -u nullglob
@@ -135,6 +167,8 @@ jobs:
           cp bao1x-boot1/*.uf2 artifacts/ 2>/dev/null || true
           cp bao1x-boot1/*.img artifacts/ 2>/dev/null || true
           cp bao1x-boot1/*.bin artifacts/ 2>/dev/null || true
+          cp bao1x-boot1/*.elf artifacts/ 2>/dev/null || true
+          cp boot1-elf-analysis/*.rpt artifacts/ 2>/dev/null || true
 
       - name: Upload artifacts
         if: success()
@@ -170,6 +204,21 @@ jobs:
       - name: Check reproducibility
         run: make CHANNELS=${{ matrix.channels }} CHECK=1 alt-boot1
 
+      - name: Generate ELF analysis
+        run: make CHANNELS=${{ matrix.channels }} ROOT=alt-boot1-elf-analysis alt-boot1-elf-analysis
+
+      - name: Verify ELF analysis matches build
+        run: |
+          FIRMWARE_PATH=$(readlink -f bao1x-alt-boot1)
+          REPORT_FIRMWARE=$(grep "^; Firmware:" alt-boot1-elf-analysis/*.rpt | head -1 | awk '{print $3}')
+          if [ "$FIRMWARE_PATH" != "$REPORT_FIRMWARE" ]; then
+            echo "ERROR: ELF analysis is for different build!"
+            echo "  Built firmware: $FIRMWARE_PATH"
+            echo "  Report firmware: $REPORT_FIRMWARE"
+            exit 1
+          fi
+          echo "ELF analysis verified for: $FIRMWARE_PATH"
+
       - name: Report results
         if: always()
         run: |
@@ -185,13 +234,13 @@ jobs:
           shopt -s nullglob
           echo '**SHA256:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in bao1x-alt-boot1/*.uf2 bao1x-alt-boot1/*.img bao1x-alt-boot1/*.bin; do
+          for f in bao1x-alt-boot1/*.uf2 bao1x-alt-boot1/*.img bao1x-alt-boot1/*.bin bao1x-alt-boot1/*.elf; do
             [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo '**MD5:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in bao1x-alt-boot1/*.uf2 bao1x-alt-boot1/*.img bao1x-alt-boot1/*.bin; do
+          for f in bao1x-alt-boot1/*.uf2 bao1x-alt-boot1/*.img bao1x-alt-boot1/*.bin bao1x-alt-boot1/*.elf; do
             [ -f "$f" ] && md5sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           shopt -u nullglob
@@ -204,6 +253,8 @@ jobs:
           cp bao1x-alt-boot1/*.uf2 artifacts/ 2>/dev/null || true
           cp bao1x-alt-boot1/*.img artifacts/ 2>/dev/null || true
           cp bao1x-alt-boot1/*.bin artifacts/ 2>/dev/null || true
+          cp bao1x-alt-boot1/*.elf artifacts/ 2>/dev/null || true
+          cp alt-boot1-elf-analysis/*.rpt artifacts/ 2>/dev/null || true
 
       - name: Upload artifacts
         if: success()

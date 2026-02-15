@@ -293,15 +293,22 @@
           (replace 'install
             (lambda* (#:key outputs #:allow-other-keys)
               (let* ((out (assoc-ref outputs "out"))
-                     (target-path (string-append "target/" #$target-dir "/release")))
+                     (target-path (string-append "target/" #$target-dir "/release"))
+                     ;; Binary name is the first word of xtask-cmd
+                     (bin-name #$(car (string-split xtask-cmd #\space)))
+                     (elf-path (string-append target-path "/" bin-name)))
                 (mkdir-p out)
+                ;; Copy firmware images (.uf2, .img, .bin)
                 (for-each
                  (lambda (pattern)
                    (for-each
                     (lambda (file)
                       (copy-file file (string-append out "/" (basename file))))
                     (find-files target-path pattern)))
-                 '("\\.uf2$" "\\.img$" "\\.bin$"))))))))
+                 '("\\.uf2$" "\\.img$" "\\.bin$"))
+                ;; Copy raw ELF file for debugging/analysis
+                (when (file-exists? elf-path)
+                  (copy-file elf-path (string-append out "/" bin-name ".elf")))))))))
     (native-inputs
      `(("rust-xous" ,rust-xous-toolchain)
        ;; lld-18 and cross-binutils are propagated from rust-xous-toolchain sysroots
