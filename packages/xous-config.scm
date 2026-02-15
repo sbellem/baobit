@@ -1,25 +1,21 @@
 (define-module (xous-config)
-  #:export (%xous-commit %xous-guix-hash %xous-git-describe %xous-clone-depth %xous-owner
+  #:export (%xous-commit %xous-guix-hash %xous-git-describe %xous-owner
             %rust-version %rust-xous-commit %rust-xous-guix-hash))
 
 ;;; Xous-core release configuration
 ;;;
 ;;; To prepare a new release:
-;;; 1. Update %xous-commit to the target commit
-;;; 2. Run `make xous-core-info` - computes hash and git describe
-;;; 3. Run `make boot0`
+;;;   make update-config XOUS_CORE_COMMIT=abc123...
+;;;   make boot0
 ;;;
 ;;; If you see "fatal: No names found, cannot describe anything",
-;;; increase %xous-clone-depth (need more history to reach a tag).
+;;; pass a larger clone depth: CLONE_DEPTH=100
 
 ;; GitHub owner (user or org)
 (define %xous-owner "betrusted-io")
-(define %xous-git-describe "v0.10.0-32-g2699a332f")
-(define %xous-commit "2699a332fe1df1e40149497d24cae05b6861fca6")
-(define %xous-guix-hash "13vvkaxzr5rfkgm62z8rh96njw01f2m51kxkqv8kgl1p6yci9vxm")
-
-;; Git clone depth for xous-core-info.scm (increase if git describe fails)
-(define %xous-clone-depth 30)
+(define %xous-git-describe "v0.10.0-52-g4efe50d87")
+(define %xous-commit "4efe50d87048b47ce9f0765415df615dbeba985c")
+(define %xous-guix-hash "0sfzray3zirkghx17273hg039l7m540wy6ifgbg0cbwvz1ip680r")
 
 ;; Rust toolchain version (e.g., "1.90", "1.91")
 ;; Package modules resolve this to rust-X.YZ
