@@ -38,7 +38,7 @@ jobs:
       - name: Verify ELF analysis matches build
         run: |
           FIRMWARE_PATH=$(readlink -f bao1x-boot0)
-          REPORT_FIRMWARE=$(grep "^; Firmware:" boot0-elf-analysis/*.rpt | head -1 | awk '{print $3}')
+          REPORT_FIRMWARE=$(grep "^; Firmware:" boot0-elf-analysis/*-elf-analysis.rpt | head -1 | awk '{print $3}')
           if [ "$FIRMWARE_PATH" != "$REPORT_FIRMWARE" ]; then
             echo "ERROR: ELF analysis is for different build!"
             echo "  Built firmware: $FIRMWARE_PATH"
@@ -46,6 +46,14 @@ jobs:
             exit 1
           fi
           echo "ELF analysis verified for: $FIRMWARE_PATH"
+
+      - name: Display ELF summary
+        run: |
+          echo "### ELF Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat boot0-elf-analysis/*-elf-analysis-summary.rpt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
       - name: Report results
         if: always()
@@ -124,7 +132,7 @@ jobs:
       - name: Verify ELF analysis matches build
         run: |
           FIRMWARE_PATH=$(readlink -f bao1x-boot1)
-          REPORT_FIRMWARE=$(grep "^; Firmware:" boot1-elf-analysis/*.rpt | head -1 | awk '{print $3}')
+          REPORT_FIRMWARE=$(grep "^; Firmware:" boot1-elf-analysis/*-elf-analysis.rpt | head -1 | awk '{print $3}')
           if [ "$FIRMWARE_PATH" != "$REPORT_FIRMWARE" ]; then
             echo "ERROR: ELF analysis is for different build!"
             echo "  Built firmware: $FIRMWARE_PATH"
@@ -132,6 +140,14 @@ jobs:
             exit 1
           fi
           echo "ELF analysis verified for: $FIRMWARE_PATH"
+
+      - name: Display ELF summary
+        run: |
+          echo "### ELF Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat boot1-elf-analysis/*-elf-analysis-summary.rpt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
       - name: Report results
         if: always()
@@ -210,7 +226,7 @@ jobs:
       - name: Verify ELF analysis matches build
         run: |
           FIRMWARE_PATH=$(readlink -f bao1x-alt-boot1)
-          REPORT_FIRMWARE=$(grep "^; Firmware:" alt-boot1-elf-analysis/*.rpt | head -1 | awk '{print $3}')
+          REPORT_FIRMWARE=$(grep "^; Firmware:" alt-boot1-elf-analysis/*-elf-analysis.rpt | head -1 | awk '{print $3}')
           if [ "$FIRMWARE_PATH" != "$REPORT_FIRMWARE" ]; then
             echo "ERROR: ELF analysis is for different build!"
             echo "  Built firmware: $FIRMWARE_PATH"
@@ -218,6 +234,14 @@ jobs:
             exit 1
           fi
           echo "ELF analysis verified for: $FIRMWARE_PATH"
+
+      - name: Display ELF summary
+        run: |
+          echo "### ELF Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat alt-boot1-elf-analysis/*-elf-analysis-summary.rpt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
       - name: Report results
         if: always()

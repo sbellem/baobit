@@ -187,6 +187,7 @@
 
 ;;; Generate assembly listing reports for firmware analysis
 ;;; Includes: headers, sorted symbols, and full disassembly with demangled names
+;;; Also generates a summary file with just headers and top symbols for CI display
 (define-public (elf-analyzer firmware-pkg)
   "Create a report package for FIRMWARE-PKG containing assembly listings."
   (let ((fw-name (package-name firmware-pkg)))
@@ -213,6 +214,7 @@
                    (objdump (string-append binutils "/bin/riscv32-none-elf-objdump"))
                    (nm (string-append binutils "/bin/riscv32-none-elf-nm"))
                    (demangle (string-append rustfilt-bin "/bin/rustfilt"))
+                   (head-cmd (string-append coreutils "/bin/head"))
                    (sha256sum (string-append coreutils "/bin/sha256sum"))
                    (md5sum (string-append coreutils "/bin/md5sum"))
                    (elf-files (find-files firmware "\\.elf$")))
@@ -220,7 +222,8 @@
               (for-each
                (lambda (elf)
                  (let* ((base (basename elf ".elf"))
-                        (rpt (string-append out "/" base ".rpt"))
+                        (rpt (string-append out "/" base "-elf-analysis.rpt"))
+                        (summary (string-append out "/" base "-elf-analysis-summary.rpt"))
                         ;; Compute checksums using pipes
                         (sha256 (let* ((port (open-input-pipe (string-append sha256sum " " elf)))
                                        (line (read-line port)))
@@ -229,26 +232,37 @@
                         (md5 (let* ((port (open-input-pipe (string-append md5sum " " elf)))
                                     (line (read-line port)))
                                (close-pipe port)
-                               (car (string-split line #\space)))))
-                   (format #t "Generating report for ~a...~%" base)
-                   ;; Provenance header - identifies exact build analyzed
-                   (call-with-output-file rpt
-                     (lambda (port)
-                       (format port "; Assembly Report~%")
-                       (format port "; Firmware: ~a~%" firmware)
-                       (format port "; ELF: ~a~%" elf)
-                       (format port "; SHA256: ~a~%" sha256)
-                       (format port "; MD5: ~a~%" md5)
-                       (format port ";~%~%")))
-                   ;; Header summary
+                               (car (string-split line #\space))))
+                        ;; Helper to write provenance header
+                        (write-header
+                         (lambda (port)
+                           (format port "; Assembly Report~%")
+                           (format port "; Firmware: ~a~%" firmware)
+                           (format port "; ELF: ~a~%" elf)
+                           (format port "; SHA256: ~a~%" sha256)
+                           (format port "; MD5: ~a~%" md5)
+                           (format port ";~%~%"))))
+                   ;; Generate full report
+                   (format #t "Generating full report for ~a...~%" base)
+                   (call-with-output-file rpt write-header)
                    (system (string-append objdump " -h " elf " >> " rpt))
-                   ;; Sorted symbols (by size)
                    (system (string-append nm " -r --size-sort --print-size " elf
                                           " | " demangle " >> " rpt))
-                   ;; Full disassembly with source info
                    (system (string-append objdump " -S -l -d " elf
                                           " | " demangle " >> " rpt))
-                   (format #t "Done: ~a~%" rpt)))
+                   (format #t "Done: ~a~%" rpt)
+                   ;; Generate summary (headers + top 30 symbols, no disassembly)
+                   (format #t "Generating summary for ~a...~%" base)
+                   (call-with-output-file summary write-header)
+                   (system (string-append objdump " -h " elf " >> " summary))
+                   (call-with-output-file summary
+                     (lambda (port)
+                       (format port "~%~%; Top 30 largest symbols:~%"))
+                     #:exists 'append)
+                   (system (string-append nm " -r --size-sort --print-size " elf
+                                          " | " demangle
+                                          " | " head-cmd " -30 >> " summary))
+                   (format #t "Done: ~a~%" summary)))
                elf-files)))))
       (inputs
        `(("firmware" ,firmware-pkg)))
