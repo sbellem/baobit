@@ -58,8 +58,8 @@ endif
 
 .PHONY: help rust-1.91 rust-1.92 rust-1.93 \
         rv32imac-none rv32imac-xous toolchain \
-        boot0 boot1 alt-boot1 bootloader baremetal-dabao dabao dabao-helloworld baosec \
-        all-dry dry-toolchain xous-core-info
+        boot0 boot1 alt-boot1 bootloader manifest baremetal-dabao dabao dabao-helloworld baosec \
+        all-dry dry-toolchain update-config
 
 help:
 	@echo "Targets:"
@@ -72,8 +72,9 @@ help:
 	@echo "  Firmware:"
 	@echo "    boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec"
 	@echo "    bootloader       - build all bootloaders (boot0 + boot1 + alt-boot1)"
-	@echo "  Release helpers:"
-	@echo "    xous-core-info   - get git describe + hash for commit in xous-config.scm"
+	@echo "    manifest         - build all production artifacts (via manifest.scm)"
+	@echo "  Config update:"
+	@echo "    update-config    - update xous-config.scm (use XOUS_CORE_COMMIT and/or RUST_XOUS_COMMIT)"
 	@echo ""
 	@echo "Options:"
 	@echo "  CHANNELS=file.scm  - use different channels file"
@@ -119,6 +120,9 @@ alt-boot1:
 
 bootloader: boot0 boot1 alt-boot1
 
+manifest:
+	guix time-machine --channels=$(CHANNELS) -- build -L packages -m manifest.scm $(if $(DRY),--dry-run) $(if $(_SUBS),--substitute-urls="$(_SUBS)") $(if $(ROOT),--root=$(ROOT)) $(if $(CHECK),--check --keep-failed)
+
 baremetal-dabao:
 	$(TM) -e '(@ (bao) bao1x-baremetal-dabao)'
 
@@ -138,6 +142,16 @@ all-dry:
 dry-toolchain:
 	$(MAKE) DRY=1 toolchain
 
-# Get xous-core info (git describe + guix hash) for commit in xous-config.scm
-xous-core-info:
-	./xous-core-info.scm
+# Update xous-config.scm with commit, git-describe, and guix hash
+# Usage: make update-config XOUS_CORE_COMMIT=abc123
+#        make update-config RUST_XOUS_COMMIT=def456
+#        make update-config XOUS_CORE_COMMIT=abc123 RUST_XOUS_COMMIT=def456
+XOUS_CORE_COMMIT ?=
+RUST_XOUS_COMMIT ?=
+CLONE_DEPTH ?=
+
+update-config:
+	./update-config.scm \
+		$(if $(XOUS_CORE_COMMIT),--xous-core-commit $(XOUS_CORE_COMMIT)) \
+		$(if $(RUST_XOUS_COMMIT),--rust-xous-commit $(RUST_XOUS_COMMIT)) \
+		$(if $(CLONE_DEPTH),--clone-depth $(CLONE_DEPTH))
