@@ -2,7 +2,9 @@ name: Build dabao
 
 on:
   push:
-    branches: [main, ci*]
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -32,29 +34,6 @@ jobs:
       - name: Check reproducibility
         run: make CHANNELS=${{ matrix.channels }} CHECK=1 dabao
 
-      - name: Generate ELF analysis
-        run: make CHANNELS=${{ matrix.channels }} ROOT=dabao-elf-analysis dabao-elf-analysis
-
-      - name: Verify ELF analysis matches build
-        run: |
-          FIRMWARE_PATH=$(readlink -f dabao)
-          REPORT_FIRMWARE=$(grep "^; Firmware:" dabao-elf-analysis/*-elf-analysis.rpt | head -1 | awk '{print $3}')
-          if [ "$FIRMWARE_PATH" != "$REPORT_FIRMWARE" ]; then
-            echo "ERROR: ELF analysis is for different build!"
-            echo "  Built firmware: $FIRMWARE_PATH"
-            echo "  Report firmware: $REPORT_FIRMWARE"
-            exit 1
-          fi
-          echo "ELF analysis verified for: $FIRMWARE_PATH"
-
-      - name: Display ELF summary
-        run: |
-          echo "### ELF Analysis Summary" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat dabao-elf-analysis/*-elf-analysis-summary.rpt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
       - name: Report results
         if: always()
         run: |
@@ -70,13 +49,13 @@ jobs:
           shopt -s nullglob
           echo '**SHA256:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in dabao/*.uf2 dabao/*.img dabao/*.bin dabao/*.elf; do
+          for f in dabao/*.uf2 dabao/*.img dabao/*.bin; do
             [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo '**MD5:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in dabao/*.uf2 dabao/*.img dabao/*.bin dabao/*.elf; do
+          for f in dabao/*.uf2 dabao/*.img dabao/*.bin; do
             [ -f "$f" ] && md5sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           shopt -u nullglob
@@ -89,13 +68,80 @@ jobs:
           cp dabao/*.uf2 artifacts/ 2>/dev/null || true
           cp dabao/*.img artifacts/ 2>/dev/null || true
           cp dabao/*.bin artifacts/ 2>/dev/null || true
-          cp dabao/*.elf artifacts/ 2>/dev/null || true
-          cp dabao-elf-analysis/*.rpt artifacts/ 2>/dev/null || true
 
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: dabao-${{ matrix.channels }}
+          path: artifacts/
+          if-no-files-found: warn
+
+  bao1x-baremetal-dabao:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build bao1x-baremetal-dabao
+        run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-baremetal-dabao baremetal-dabao
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 baremetal-dabao
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## bao1x-baremetal-dabao (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f bao1x-baremetal-dabao 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifact Checksums" >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          echo '**SHA256:**' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          for f in bao1x-baremetal-dabao/*.uf2 bao1x-baremetal-dabao/*.img bao1x-baremetal-dabao/*.bin; do
+            [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo '**MD5:**' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          for f in bao1x-baremetal-dabao/*.uf2 bao1x-baremetal-dabao/*.img bao1x-baremetal-dabao/*.bin; do
+            [ -f "$f" ] && md5sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          shopt -u nullglob
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Copy artifacts
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp bao1x-baremetal-dabao/*.uf2 artifacts/ 2>/dev/null || true
+          cp bao1x-baremetal-dabao/*.img artifacts/ 2>/dev/null || true
+          cp bao1x-baremetal-dabao/*.bin artifacts/ 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bao1x-baremetal-dabao-${{ matrix.channels }}
           path: artifacts/
           if-no-files-found: warn

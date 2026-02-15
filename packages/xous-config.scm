@@ -13,9 +13,9 @@
 
 ;; GitHub owner (user or org)
 (define %xous-owner "betrusted-io")
-(define %xous-git-describe "v0.10.0-52-g4efe50d87")
-(define %xous-commit "4efe50d87048b47ce9f0765415df615dbeba985c")
-(define %xous-guix-hash "0sfzray3zirkghx17273hg039l7m540wy6ifgbg0cbwvz1ip680r")
+(define %xous-git-describe "v0.10.0-61-g5397e1b48")
+(define %xous-commit "5397e1b488c081566cef2c0e597e05426f67c1c3")
+(define %xous-guix-hash "1ylzls6v4y5gbjx4yibkg5ndd90h4rlcvmdagkdkapa7wmhw8dbx")
 
 ;; Rust toolchain version (e.g., "1.90", "1.91")
 ;; Package modules resolve this to rust-X.YZ

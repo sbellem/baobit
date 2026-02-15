@@ -1,0 +1,177 @@
+name: Build rust-xous-toolchain
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  rust-sysroot-riscv32imac-none-elf:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build rust-sysroot-riscv32imac-none-elf
+        run: make CHANNELS=${{ matrix.channels }} ROOT=sysroot-none-elf rv32imac-none
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 rv32imac-none
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## rust-sysroot-riscv32imac-none-elf (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f sysroot-none-elf 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Export nar archive
+        if: success()
+        run: |
+          mkdir -p nars
+          if [ -L sysroot-none-elf ]; then
+            store_path=$(readlink -f sysroot-none-elf)
+            if [ -d "$store_path" ]; then
+              guix archive --export "$store_path" | gzip > nars/sysroot-none-elf.nar.gz
+            fi
+          fi
+
+      - name: Upload nar archive
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sysroot-none-elf-${{ matrix.channels }}
+          path: nars/
+          if-no-files-found: warn
+
+  rust-sysroot-riscv32imac-xous-elf:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build rust-sysroot-riscv32imac-xous-elf
+        run: make CHANNELS=${{ matrix.channels }} ROOT=sysroot-xous-elf rv32imac-xous
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 rv32imac-xous
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## rust-sysroot-riscv32imac-xous-elf (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f sysroot-xous-elf 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Export nar archive
+        if: success()
+        run: |
+          mkdir -p nars
+          if [ -L sysroot-xous-elf ]; then
+            store_path=$(readlink -f sysroot-xous-elf)
+            if [ -d "$store_path" ]; then
+              guix archive --export "$store_path" | gzip > nars/sysroot-xous-elf.nar.gz
+            fi
+          fi
+
+      - name: Upload nar archive
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sysroot-xous-elf-${{ matrix.channels }}
+          path: nars/
+          if-no-files-found: warn
+
+  rust-xous-toolchain:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channels: ['channels.scm', 'channels-codeberg.scm']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build rust-xous-toolchain
+        run: make CHANNELS=${{ matrix.channels }} ROOT=rust-xous toolchain
+
+      - name: Check reproducibility
+        run: make CHANNELS=${{ matrix.channels }} CHECK=1 toolchain
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## rust-xous-toolchain (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          STORE_PATH=$(readlink -f rust-xous 2>/dev/null || echo 'Build failed')
+          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Export nar archive
+        if: success()
+        run: |
+          mkdir -p nars
+          if [ -L rust-xous ]; then
+            store_path=$(readlink -f rust-xous)
+            if [ -d "$store_path" ]; then
+              guix archive --export "$store_path" | gzip > nars/rust-xous.nar.gz
+            fi
+          fi
+
+      - name: Upload nar archive
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-xous-${{ matrix.channels }}
+          path: nars/
+          if-no-files-found: warn

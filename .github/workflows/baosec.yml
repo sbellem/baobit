@@ -2,7 +2,9 @@ name: Build baosec
 
 on:
   push:
-    branches: [main, ci*]
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -32,29 +34,6 @@ jobs:
       - name: Check reproducibility
         run: make CHANNELS=${{ matrix.channels }} CHECK=1 baosec
 
-      - name: Generate ELF analysis
-        run: make CHANNELS=${{ matrix.channels }} ROOT=baosec-elf-analysis baosec-elf-analysis
-
-      - name: Verify ELF analysis matches build
-        run: |
-          FIRMWARE_PATH=$(readlink -f baosec)
-          REPORT_FIRMWARE=$(grep "^; Firmware:" baosec-elf-analysis/*-elf-analysis.rpt | head -1 | awk '{print $3}')
-          if [ "$FIRMWARE_PATH" != "$REPORT_FIRMWARE" ]; then
-            echo "ERROR: ELF analysis is for different build!"
-            echo "  Built firmware: $FIRMWARE_PATH"
-            echo "  Report firmware: $REPORT_FIRMWARE"
-            exit 1
-          fi
-          echo "ELF analysis verified for: $FIRMWARE_PATH"
-
-      - name: Display ELF summary
-        run: |
-          echo "### ELF Analysis Summary" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat baosec-elf-analysis/*-elf-analysis-summary.rpt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
       - name: Report results
         if: always()
         run: |
@@ -70,13 +49,13 @@ jobs:
           shopt -s nullglob
           echo '**SHA256:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in baosec/*.uf2 baosec/*.img baosec/*.bin baosec/*.elf; do
+          for f in baosec/*.uf2 baosec/*.img baosec/*.bin; do
             [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo '**MD5:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in baosec/*.uf2 baosec/*.img baosec/*.bin baosec/*.elf; do
+          for f in baosec/*.uf2 baosec/*.img baosec/*.bin; do
             [ -f "$f" ] && md5sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           shopt -u nullglob
@@ -89,8 +68,6 @@ jobs:
           cp baosec/*.uf2 artifacts/ 2>/dev/null || true
           cp baosec/*.img artifacts/ 2>/dev/null || true
           cp baosec/*.bin artifacts/ 2>/dev/null || true
-          cp baosec/*.elf artifacts/ 2>/dev/null || true
-          cp baosec-elf-analysis/*.rpt artifacts/ 2>/dev/null || true
 
       - name: Upload artifacts
         if: success()

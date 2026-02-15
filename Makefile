@@ -83,7 +83,7 @@ help:
 	@echo "    dabao-elf-analysis           - assembly listing for dabao"
 	@echo "    baosec-elf-analysis          - assembly listing for baosec"
 	@echo "  Config update:"
-	@echo "    update-config    - update xous-config.scm (use XOUS_CORE_COMMIT and/or RUST_XOUS_COMMIT)"
+	@echo "    update-config      - update xous-config.scm (use XOUS_CORE_COMMIT and/or RUST_XOUS_COMMIT)"
 	@echo ""
 	@echo "Options:"
 	@echo "  CHANNELS=file.scm  - use different channels file"
