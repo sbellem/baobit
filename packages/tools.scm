@@ -255,10 +255,8 @@
                    (format #t "Generating summary for ~a...~%" base)
                    (call-with-output-file summary write-header)
                    (system (string-append objdump " -h " elf " >> " summary))
-                   (call-with-output-file summary
-                     (lambda (port)
-                       (format port "~%~%; Top 30 largest symbols:~%"))
-                     #:exists 'append)
+                   (system (string-append "echo '' >> " summary))
+                   (system (string-append "echo '; Top 30 largest symbols:' >> " summary))
                    (system (string-append nm " -r --size-sort --print-size " elf
                                           " | " demangle
                                           " | " head-cmd " -30 >> " summary))
