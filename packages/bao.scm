@@ -30,6 +30,20 @@
 (define %xous-short-hash (substring %xous-commit 0 8))
 
 ;;; =============================================================
+;;; ELF BINARY NAMES
+;;; =============================================================
+;;; Maps xtask command to ELF binary name produced by cargo.
+;;; alt-boot1 uses bao1x-boot1 binary (substituted by xtask).
+
+(define %elf-binary-names
+  '(("bao1x-boot0"           . "bao1x-boot0")
+    ("bao1x-boot1"           . "bao1x-boot1")
+    ("bao1x-alt-boot1"       . "bao1x-boot1")
+    ("bao1x-baremetal-dabao" . "bao1x-baremetal-dabao")
+    ("dabao"                 . "dabao")
+    ("baosec"                . "baosec")))
+
+;;; =============================================================
 ;;; SOURCE DEFINITION - Fetched via git, fully reproducible
 ;;; =============================================================
 
@@ -294,9 +308,12 @@
             (lambda* (#:key outputs #:allow-other-keys)
               (let* ((out (assoc-ref outputs "out"))
                      (target-path (string-append "target/" #$target-dir "/release"))
-                     ;; Binary name is the first word of xtask-cmd
-                     (bin-name #$(car (string-split xtask-cmd #\space)))
-                     (elf-path (string-append target-path "/" bin-name)))
+                     ;; Package name is the first word of xtask-cmd
+                     (pkg-name #$(car (string-split xtask-cmd #\space)))
+                     ;; ELF binary name from mapping (see %elf-binary-names)
+                     (elf-name #$(assoc-ref %elf-binary-names
+                                            (car (string-split xtask-cmd #\space))))
+                     (elf-path (string-append target-path "/" elf-name)))
                 (mkdir-p out)
                 ;; Copy firmware images (.uf2, .img, .bin)
                 (for-each
@@ -308,7 +325,7 @@
                  '("\\.uf2$" "\\.img$" "\\.bin$"))
                 ;; Copy raw ELF file for debugging/analysis
                 (when (file-exists? elf-path)
-                  (copy-file elf-path (string-append out "/" bin-name ".elf")))))))))
+                  (copy-file elf-path (string-append out "/" pkg-name ".elf")))))))))
     (native-inputs
      `(("rust-xous" ,rust-xous-toolchain)
        ;; lld-18 and cross-binutils are propagated from rust-xous-toolchain sysroots
