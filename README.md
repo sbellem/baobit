@@ -4,14 +4,16 @@
 
 # baobit
 
-Guix channel for reproducible [Baochip](https://baochip.com/) firmware builds.
+Guix channel for reproducible [Baochip][] firmware builds.
 
 ![Build bootloader](https://github.com/sbellem/baobit/actions/workflows/bootloader.yml/badge.svg)
 ![Build packages](https://github.com/sbellem/baobit/actions/workflows/build.yml/badge.svg)
 
 ## Overview
 
-This channel provides Guix packages for building Baochip/Xous firmware with full reproducibility. All builds are verified with `guix build --check`.
+This channel provides Guix packages for building [Baochip][] firmware with full reproducibility.
+All builds are verified with `guix build --check`. Baochip's firmware source code is part of the
+[Xous microkernel][xous-core] repository.
 
 ### Packages
 
@@ -80,5 +82,8 @@ Artifact hashes (SHA256 + MD5) are reported in CI job summaries.
 
 ## Related Projects
 
-- [xous-core](https://github.com/betrusted-io/xous-core) - Xous operating system
-- [Baochip](https://baochip.com/) - Open hardware security device
+- [xous-core][] - Xous operating system
+- [Baochip][] - Open hardware security device
+
+[xous-core]: https://github.com/betrusted-io/xous-core
+[baochip]: https://baochip.com
