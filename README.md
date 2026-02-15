@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo-dark.jpeg" alt="baobit logo" width="900">
+</p>
+
 # baobit
 
 Guix channel for reproducible [Baochip](https://baochip.com/) firmware builds.
@@ -25,14 +29,14 @@ This channel provides Guix packages for building Baochip/Xous firmware with full
 ## Quick Start
 
 ```bash
-# Add channel to ~/.config/guix/channels.scm
-guix pull
+# Update to a new xous-core commit (computes hash and git-describe automatically)
+make update-config XOUS_CORE_COMMIT=abc123def...
 
 # Build bootloader
-guix time-machine -C channels.scm -- build -L packages bao1x-boot0
-
-# Or use make
 make boot0
+
+# Or build all production artifacts
+make manifest
 ```
 
 ## Configuration
@@ -42,42 +46,34 @@ All release parameters are in `packages/xous-config.scm`:
 | Variable | Description |
 |----------|-------------|
 | `%xous-commit` | Target xous-core commit |
-| `%xous-git-describe` | Git describe output (set by `make xous-core-info`) |
-| `%xous-guix-hash` | Source hash (set by `make xous-core-info`) |
+| `%xous-git-describe` | Git describe output (set by `make update-config`) |
+| `%xous-guix-hash` | Source hash (set by `make update-config`) |
 | `%xous-owner` | GitHub owner (default: `betrusted-io`) |
 | `%rust-version` | Rust toolchain version (e.g., `"1.90"`) |
 | `%rust-xous-commit` | betrusted-io/rust fork commit (must match `%rust-version`) |
 | `%rust-xous-guix-hash` | betrusted-io/rust source hash |
 
-## Updating xous-core
+## Updating Configuration
+
+The `update-config` target computes and updates commit hashes, `git describe` output, and `guix hash` values.
 
 ```bash
+# Update xous-core only
 make update-config XOUS_CORE_COMMIT=abc123def...
-make boot0
-```
 
-This computes and updates `%xous-commit`, `%xous-git-describe`, and `%xous-guix-hash`.
-
-If `git describe` fails with "No names found", pass a larger clone depth:
-```bash
-make update-config XOUS_CORE_COMMIT=abc123 CLONE_DEPTH=100
-```
-
-To update betrusted-io/rust as well:
-```bash
+# Update both xous-core and betrusted-io/rust
 make update-config XOUS_CORE_COMMIT=abc123 RUST_XOUS_COMMIT=def456
+
+# If git describe fails with "No names found", use a larger clone depth
+make update-config XOUS_CORE_COMMIT=abc123 CLONE_DEPTH=100
 ```
 
 ## Reproducibility
 
-Builds are verified reproducible via:
+Verify builds are reproducible:
 ```bash
 make CHECK=1 boot0
-```
-
-Build all production artifacts at once:
-```bash
-guix time-machine -C channels.scm -- build -L packages -m manifest.scm
+make CHECK=1 manifest
 ```
 
 Artifact hashes (SHA256 + MD5) are reported in CI job summaries.
