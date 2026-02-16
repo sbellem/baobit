@@ -20,8 +20,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (rust-xous-toolchain)
   #:use-module (bao-crates)
-  #:use-module (xous-config)
-  #:use-module (baobit-config))
+  #:use-module (xous-config))
 
 ;;; =============================================================
 ;;; VERSION CONFIGURATION - See xous-config.scm
@@ -302,8 +301,7 @@
               (invoke "cargo" "xtask" #$@(string-split xtask-cmd #\space)
                       "--no-verify"
                       "--git-describe" #$%xous-git-describe
-                      "--git-rev" #$%xous-commit
-                      "--baobit-commit" #$%baobit-commit)))
+                      "--git-rev" #$%xous-commit)))
 
           ;; Phase 6: Install
           (replace 'install

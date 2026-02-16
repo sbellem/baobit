@@ -15,16 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set baobit commit
-        run: |
-          COMMIT=$(git rev-parse HEAD)
-          cat > packages/baobit-config.scm << EOF
-          (define-module (baobit-config)
-            #:export (%baobit-commit))
-          (define %baobit-commit "$COMMIT")
-          EOF
-          echo "Set baobit commit to: $COMMIT"
-
       - name: Install Guix
         uses: sbellem/guix-install-action@dev
         with:
