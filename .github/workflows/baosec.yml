@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels.scm']
     steps:
       - uses: actions/checkout@v4
 
