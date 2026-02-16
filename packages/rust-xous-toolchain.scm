@@ -60,7 +60,7 @@
     (method git-fetch)
     (uri (git-reference
           (url "https://github.com/rust-lang/llvm-project")
-          (commit "rustc/20.1-2025-07-13")))
+          (commit "e8a2ffcf322f45b8dce82c65ab27a3e2430a6b51")))
     (file-name "llvm-compiler-rt-source")
     (sha256
      (base32 "1cw6a6blx0qfvlsp2p5wzdlnqnnnlcfjz5xx24vlcsm43vp0mk1a"))))
