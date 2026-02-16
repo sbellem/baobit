@@ -12,11 +12,10 @@
 ;;; pass a larger clone depth: CLONE_DEPTH=100
 
 ;; GitHub owner (user or org)
-;;(define %xous-owner "betrusted-io")
-(define %xous-owner "sbellem")
-(define %xous-git-describe "v0.10.0-53-g3ea92d3ba")
-(define %xous-commit "3ea92d3badc0a6ba00f03978907d4e772862b3dd")
-(define %xous-guix-hash "1v8a6hlavi5jxi74plcbbwpqfc5ad2jhwwlcwv5xn6bxxm5mg7xz")
+(define %xous-owner "betrusted-io")
+(define %xous-git-describe "v0.10.0-61-g5397e1b48")
+(define %xous-commit "5397e1b488c081566cef2c0e597e05426f67c1c3")
+(define %xous-guix-hash "1ylzls6v4y5gbjx4yibkg5ndd90h4rlcvmdagkdkapa7wmhw8dbx")
 
 ;; Rust toolchain version (e.g., "1.90", "1.91")
 ;; Package modules resolve this to rust-X.YZ
