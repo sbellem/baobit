@@ -7,20 +7,21 @@
 
 (define-module (tools)
   #:use-module (guix packages)
-  #:use-module ((guix download) #:select (url-fetch))
-  #:use-module ((guix build-system cargo) #:select (crate-uri))
+  #:use-module ((guix download)
+                #:select (url-fetch))
+  #:use-module ((guix build-system cargo)
+                #:select (crate-uri))
   #:use-module (guix git-download)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system trivial)
   #:use-module (guix gexp)
-  #:use-module ((guix licenses) #:prefix license:)
+  #:use-module ((guix licenses)
+                #:prefix license:)
   #:use-module (gnu packages cross-base)
   #:use-module (gnu packages base)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages rust)
-  #:export (rustfilt
-            riscv32-none-elf-binutils
-            elf-analyzer))
+  #:export (rustfilt riscv32-none-elf-binutils elf-analyzer))
 
 ;;; =============================================================
 ;;; CRATE SOURCES (generated via guix import crate -f Cargo.lock)
@@ -118,25 +119,38 @@
                            (ice-9 rdelim))
               (let ((vendor-dir (string-append (getcwd) "/vendor")))
                 (mkdir-p vendor-dir)
-                (for-each
-                 (lambda (input)
-                   (let* ((name (car input))
-                          (path (cdr input)))
-                     (when (string-prefix? "crate-" name)
-                       (let* ((file-name (basename path))
-                              (crate-name (substring file-name 5
-                                                     (- (string-length file-name) 7)))
-                              (crate-dir (string-append vendor-dir "/" crate-name))
-                              (port (open-input-pipe (string-append "sha256sum " path)))
-                              (checksum-line (read-line port))
-                              (_ (close-pipe port))
-                              (checksum (car (string-split checksum-line #\space))))
-                         (mkdir-p crate-dir)
-                         (invoke "tar" "xzf" path "-C" crate-dir "--strip-components=1")
-                         (call-with-output-file (string-append crate-dir "/.cargo-checksum.json")
-                           (lambda (port)
-                             (format port "{\"files\":{},\"package\":\"~a\"}" checksum)))))))
-                 inputs))))
+                (for-each (lambda (input)
+                            (let* ((name (car input))
+                                   (path (cdr input)))
+                              (when (string-prefix? "crate-" name)
+                                (let* ((file-name (basename path))
+                                       (crate-name (substring file-name 5
+                                                              (- (string-length
+                                                                  file-name) 7)))
+                                       (crate-dir (string-append vendor-dir
+                                                                 "/"
+                                                                 crate-name))
+                                       (port (open-input-pipe (string-append
+                                                               "sha256sum "
+                                                               path)))
+                                       (checksum-line (read-line port))
+                                       (_ (close-pipe port))
+                                       (checksum (car (string-split
+                                                       checksum-line #\space))))
+                                  (mkdir-p crate-dir)
+                                  (invoke "tar"
+                                          "xzf"
+                                          path
+                                          "-C"
+                                          crate-dir
+                                          "--strip-components=1")
+                                  (call-with-output-file (string-append
+                                                          crate-dir
+                                                          "/.cargo-checksum.json")
+                                    (lambda (port)
+                                      (format port
+                                              "{\"files\":{},\"package\":\"~a\"}"
+                                              checksum))))))) inputs))))
 
           ;; Configure cargo to use vendored crates
           (add-after 'setup-vendor 'configure-cargo
@@ -152,7 +166,8 @@
           ;; Build with cargo
           (replace 'build
             (lambda _
-              (setenv "CARGO_HOME" (string-append (getcwd) "/.cargo-home"))
+              (setenv "CARGO_HOME"
+                      (string-append (getcwd) "/.cargo-home"))
               (invoke "cargo" "build" "--release")))
 
           ;; Install binary
@@ -161,15 +176,15 @@
               (let ((bin (string-append (assoc-ref outputs "out") "/bin")))
                 (mkdir-p bin)
                 (install-file "target/release/rustfilt" bin)))))))
-    (native-inputs
-     `(("rust" ,rust-1.90)
-       ("rust:cargo" ,rust-1.90 "cargo")
-       ("tar" ,tar)
-       ("gzip" ,gzip)
-       ("coreutils" ,coreutils)
-       ,@(map (lambda (crate)
-                `(,(string-append "crate-" (origin-file-name crate)) ,crate))
-              %rustfilt-crates)))
+    (native-inputs `(("rust" ,rust-1.90)
+                     ("rust:cargo" ,rust-1.90 "cargo")
+                     ("tar" ,tar)
+                     ("gzip" ,gzip)
+                     ("coreutils" ,coreutils)
+                     ,@(map (lambda (crate)
+                              `(,(string-append "crate-"
+                                                (origin-file-name crate)) ,crate))
+                            %rustfilt-crates)))
     (home-page "https://github.com/luser/rustfilt")
     (synopsis "Demangle Rust symbol names")
     (description
@@ -194,7 +209,8 @@
     (package
       (name (string-append fw-name "-report"))
       (version (package-version firmware-pkg))
-      (source #f)
+      (source
+       #f)
       (build-system trivial-build-system)
       (arguments
        (list
@@ -211,7 +227,8 @@
                    (binutils #$(this-package-native-input "binutils"))
                    (rustfilt-bin #$(this-package-native-input "rustfilt"))
                    (coreutils #$(this-package-native-input "coreutils"))
-                   (objdump (string-append binutils "/bin/riscv32-none-elf-objdump"))
+                   (objdump (string-append binutils
+                                           "/bin/riscv32-none-elf-objdump"))
                    (nm (string-append binutils "/bin/riscv32-none-elf-nm"))
                    (demangle (string-append rustfilt-bin "/bin/rustfilt"))
                    (head-cmd (string-append coreutils "/bin/head"))
@@ -219,59 +236,90 @@
                    (md5sum (string-append coreutils "/bin/md5sum"))
                    (elf-files (find-files firmware "\\.elf$")))
               (mkdir-p out)
-              (for-each
-               (lambda (elf)
-                 (let* ((base (basename elf ".elf"))
-                        (rpt (string-append out "/" base "-elf-analysis.rpt"))
-                        (summary (string-append out "/" base "-elf-analysis-summary.rpt"))
-                        ;; Compute checksums using pipes
-                        (sha256 (let* ((port (open-input-pipe (string-append sha256sum " " elf)))
-                                       (line (read-line port)))
-                                  (close-pipe port)
-                                  (car (string-split line #\space))))
-                        (md5 (let* ((port (open-input-pipe (string-append md5sum " " elf)))
-                                    (line (read-line port)))
-                               (close-pipe port)
-                               (car (string-split line #\space))))
-                        ;; Helper to write provenance header
-                        (write-header
-                         (lambda (port)
-                           (format port "; Assembly Report~%")
-                           (format port "; Firmware: ~a~%" firmware)
-                           (format port "; ELF: ~a~%" elf)
-                           (format port "; SHA256: ~a~%" sha256)
-                           (format port "; MD5: ~a~%" md5)
-                           (format port ";~%~%"))))
-                   ;; Generate full report
-                   (format #t "Generating full report for ~a...~%" base)
-                   (call-with-output-file rpt write-header)
-                   (system (string-append objdump " -h " elf " >> " rpt))
-                   (system (string-append nm " -r --size-sort --print-size " elf
-                                          " | " demangle " >> " rpt))
-                   (system (string-append objdump " -S -l -d " elf
-                                          " | " demangle " >> " rpt))
-                   (format #t "Done: ~a~%" rpt)
-                   ;; Generate summary (headers + top 30 symbols, no disassembly)
-                   (format #t "Generating summary for ~a...~%" base)
-                   (call-with-output-file summary write-header)
-                   (system (string-append objdump " -h " elf " >> " summary))
-                   (system (string-append "echo '' >> " summary))
-                   (system (string-append "echo '; Top 30 largest symbols:' >> " summary))
-                   (system (string-append nm " -r --size-sort --print-size " elf
-                                          " | " demangle
-                                          " | " head-cmd " -30 >> " summary))
-                   (format #t "Done: ~a~%" summary)))
-               elf-files)))))
-      (inputs
-       `(("firmware" ,firmware-pkg)))
-      (native-inputs
-       `(("binutils" ,riscv32-none-elf-binutils)
-         ("rustfilt" ,rustfilt)
-         ("coreutils" ,coreutils)))
+              (for-each (lambda (elf)
+                          (let* ((base (basename elf ".elf"))
+                                 (rpt (string-append out "/" base
+                                                     "-elf-analysis.rpt"))
+                                 (summary (string-append out "/" base
+                                           "-elf-analysis-summary.rpt"))
+                                 ;; Compute checksums using pipes
+                                 (sha256 (let* ((port (open-input-pipe (string-append
+                                                                        sha256sum
+                                                                        " "
+                                                                        elf)))
+                                                (line (read-line port)))
+                                           (close-pipe port)
+                                           (car (string-split line #\space))))
+                                 (md5 (let* ((port (open-input-pipe (string-append
+                                                                     md5sum
+                                                                     " " elf)))
+                                             (line (read-line port)))
+                                        (close-pipe port)
+                                        (car (string-split line #\space))))
+                                 ;; Helper to write provenance header
+                                 (write-header (lambda (port)
+                                                 (format port
+                                                  "; Assembly Report~%")
+                                                 (format port
+                                                         "; Firmware: ~a~%"
+                                                         firmware)
+                                                 (format port "; ELF: ~a~%"
+                                                         elf)
+                                                 (format port "; SHA256: ~a~%"
+                                                         sha256)
+                                                 (format port "; MD5: ~a~%"
+                                                         md5)
+                                                 (format port ";~%~%"))))
+                            ;; Generate full report
+                            (format #t "Generating full report for ~a...~%"
+                                    base)
+                            (call-with-output-file rpt
+                              write-header)
+                            (system (string-append objdump " -h " elf " >> "
+                                                   rpt))
+                            (system (string-append nm
+                                     " -r --size-sort --print-size "
+                                     elf
+                                     " | "
+                                     demangle
+                                     " >> "
+                                     rpt))
+                            (system (string-append objdump
+                                                   " -S -l -d "
+                                                   elf
+                                                   " | "
+                                                   demangle
+                                                   " >> "
+                                                   rpt))
+                            (format #t "Done: ~a~%" rpt)
+                            ;; Generate summary (headers + top 30 symbols, no disassembly)
+                            (format #t "Generating summary for ~a...~%" base)
+                            (call-with-output-file summary
+                              write-header)
+                            (system (string-append objdump " -h " elf " >> "
+                                                   summary))
+                            (system (string-append "echo '' >> " summary))
+                            (system (string-append
+                                     "echo '; Top 30 largest symbols:' >> "
+                                     summary))
+                            (system (string-append nm
+                                     " -r --size-sort --print-size "
+                                     elf
+                                     " | "
+                                     demangle
+                                     " | "
+                                     head-cmd
+                                     " -30 >> "
+                                     summary))
+                            (format #t "Done: ~a~%" summary))) elf-files)))))
+      (inputs `(("firmware" ,firmware-pkg)))
+      (native-inputs `(("binutils" ,riscv32-none-elf-binutils)
+                       ("rustfilt" ,rustfilt)
+                       ("coreutils" ,coreutils)))
       (home-page (package-home-page firmware-pkg))
       (synopsis (string-append "Assembly report for " fw-name))
-      (description
-       (string-append "Assembly listing report for " fw-name " firmware. "
-                      "Contains headers, sorted symbols, and full disassembly "
-                      "with demangled Rust symbol names."))
+      (description (string-append "Assembly listing report for " fw-name
+                    " firmware. "
+                    "Contains headers, sorted symbols, and full disassembly "
+                    "with demangled Rust symbol names."))
       (license (package-license firmware-pkg)))))
