@@ -17,7 +17,6 @@
   #:use-module (gnu packages base)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages version-control)
-  #:use-module (gnu packages commencement)
   #:use-module (srfi srfi-1)
   #:use-module (rust-xous-toolchain)
   #:use-module (bao-crates)
