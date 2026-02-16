@@ -7,6 +7,7 @@
 
 (define-module (bao)
   #:use-module (guix packages)
+  #:use-module (guix records)
   #:use-module (guix git-download)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system trivial)
@@ -56,58 +57,92 @@
     (file-name (git-file-name "xous-core" %xous-git-describe))
     (sha256 (base32 %xous-guix-hash))))
 
-;;; Git dependency metadata
-;;; Each entry: (input-name origin git-url ((crate-name . subdir) ...))
+;;; Git dependency record type
+(define-record-type* <git-dependency>
+  git-dependency make-git-dependency
+  git-dependency?
+  (name    git-dependency-name)      ; Input name (e.g., "git-armv7")
+  (origin  git-dependency-origin)    ; Origin object for the git repo
+  (url     git-dependency-url)       ; Git URL (for Cargo.toml patching)
+  (crates  git-dependency-crates))   ; Alist of (crate-name . subdir)
+
 (define %git-dependencies
-  `(("git-armv7" ,rust-armv7-git
-     "https://github.com/Foundation-Devices/armv7.git"
-     (("armv7" . ".")))
-    ("git-atsama5d27" ,rust-atsama5d27-git
-     "https://github.com/Foundation-Devices/atsama5d27.git"
-     (("atsama5d27" . ".")
-      ("utralib" . "utralib")))
-    ("git-com-rs" ,rust-com-rs-git
-     "https://github.com/betrusted-io/com_rs"
-     (("com_rs" . ".")))
-    ("git-curve25519-dalek" ,rust-curve25519-dalek-git
-     "https://github.com/betrusted-io/curve25519-dalek.git"
-     (("curve25519-dalek" . "curve25519-dalek")
-      ("curve25519-dalek-derive" . "curve25519-dalek-derive")))
-    ("git-engine-25519" ,rust-engine-25519-git
-     "https://github.com/betrusted-io/xous-engine-25519.git"
-     (("engine-25519" . ".")))
-    ("git-engine25519-as" ,rust-engine25519-as-git
-     "https://github.com/betrusted-io/engine25519-as.git"
-     (("engine25519-as" . ".")))
-    ("git-ring-xous" ,rust-ring-xous-git
-     "https://github.com/betrusted-io/ring-xous"
-     (("ring" . ".")))
-    ("git-rqrr" ,rust-rqrr-git
-     "https://github.com/betrusted-io/rqrr.git"
-     (("rqrr" . ".")))
-    ("git-sha2-xous" ,rust-sha2-xous-git
-     "https://github.com/betrusted-io/hashes.git"
-     (("sha2" . "sha2")))
-    ("git-simple-fatfs" ,rust-simple-fatfs-git
-     "https://github.com/betrusted-io/simple-fatfs.git"
-     (("simple-fatfs" . ".")))
-    ("git-usb-device" ,rust-usb-device-git
-     "https://github.com/betrusted-io/usb-device.git"
-     (("usb-device" . ".")))
-    ("git-usbd-serial" ,rust-usbd-serial-git
-     "https://github.com/betrusted-io/usbd-serial.git"
-     (("usbd-serial" . ".")))
-    ("git-xous-usb-hid" ,rust-xous-usb-hid-git
-     "https://github.com/betrusted-io/xous-usb-hid.git"
-     (("xous-usb-hid" . ".")))))
+  (list
+   (git-dependency
+    (name "git-armv7")
+    (origin rust-armv7-git)
+    (url "https://github.com/Foundation-Devices/armv7.git")
+    (crates '(("armv7" . "."))))
+   (git-dependency
+    (name "git-atsama5d27")
+    (origin rust-atsama5d27-git)
+    (url "https://github.com/Foundation-Devices/atsama5d27.git")
+    (crates '(("atsama5d27" . ".")
+              ("utralib" . "utralib"))))
+   (git-dependency
+    (name "git-com-rs")
+    (origin rust-com-rs-git)
+    (url "https://github.com/betrusted-io/com_rs")
+    (crates '(("com_rs" . "."))))
+   (git-dependency
+    (name "git-curve25519-dalek")
+    (origin rust-curve25519-dalek-git)
+    (url "https://github.com/betrusted-io/curve25519-dalek.git")
+    (crates '(("curve25519-dalek" . "curve25519-dalek")
+              ("curve25519-dalek-derive" . "curve25519-dalek-derive"))))
+   (git-dependency
+    (name "git-engine-25519")
+    (origin rust-engine-25519-git)
+    (url "https://github.com/betrusted-io/xous-engine-25519.git")
+    (crates '(("engine-25519" . "."))))
+   (git-dependency
+    (name "git-engine25519-as")
+    (origin rust-engine25519-as-git)
+    (url "https://github.com/betrusted-io/engine25519-as.git")
+    (crates '(("engine25519-as" . "."))))
+   (git-dependency
+    (name "git-ring-xous")
+    (origin rust-ring-xous-git)
+    (url "https://github.com/betrusted-io/ring-xous")
+    (crates '(("ring" . "."))))
+   (git-dependency
+    (name "git-rqrr")
+    (origin rust-rqrr-git)
+    (url "https://github.com/betrusted-io/rqrr.git")
+    (crates '(("rqrr" . "."))))
+   (git-dependency
+    (name "git-sha2-xous")
+    (origin rust-sha2-xous-git)
+    (url "https://github.com/betrusted-io/hashes.git")
+    (crates '(("sha2" . "sha2"))))
+   (git-dependency
+    (name "git-simple-fatfs")
+    (origin rust-simple-fatfs-git)
+    (url "https://github.com/betrusted-io/simple-fatfs.git")
+    (crates '(("simple-fatfs" . "."))))
+   (git-dependency
+    (name "git-usb-device")
+    (origin rust-usb-device-git)
+    (url "https://github.com/betrusted-io/usb-device.git")
+    (crates '(("usb-device" . "."))))
+   (git-dependency
+    (name "git-usbd-serial")
+    (origin rust-usbd-serial-git)
+    (url "https://github.com/betrusted-io/usbd-serial.git")
+    (crates '(("usbd-serial" . "."))))
+   (git-dependency
+    (name "git-xous-usb-hid")
+    (origin rust-xous-usb-hid-git)
+    (url "https://github.com/betrusted-io/xous-usb-hid.git")
+    (crates '(("xous-usb-hid" . "."))))))
 
 ;;; Derive git URL to local path mappings from %git-dependencies
 (define (git-deps->mappings deps)
   (append-map
    (lambda (dep)
-     (let ((input-name (car dep))
-           (git-url (caddr dep))
-           (crate-mappings (cadddr dep)))
+     (let ((input-name (git-dependency-name dep))
+           (git-url (git-dependency-url dep))
+           (crate-mappings (git-dependency-crates dep)))
        (map (lambda (mapping)
               (list (car mapping) git-url input-name (cdr mapping)))
             crate-mappings)))
@@ -339,7 +374,7 @@
               crate-inputs)
        ;; Add git dependency inputs
        ,@(map (lambda (dep)
-                `(,(car dep) ,(cadr dep)))
+                `(,(git-dependency-name dep) ,(git-dependency-origin dep)))
               %git-dependencies)))
     (home-page "https://github.com/betrusted-io/xous-core")
     (synopsis (string-append "Xous " name " firmware (production)"))
