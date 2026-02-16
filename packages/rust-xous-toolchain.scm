@@ -119,7 +119,7 @@
                                        ;; Parse rust-memchr-2.7.6.tar.gz -> memchr-2.7.6
                                        (crate-name (substring file-name 5 ;drop "rust-"
                                                               (- (string-length
-                                                                  file-name) 7))) ;drop ".tar.gz"
+                                                                  file-name) 7)))
                                        (crate-dir (string-append vendor-dir
                                                                  "/"
                                                                  crate-name))
@@ -138,7 +138,7 @@
                                           "-C"
                                           crate-dir
                                           "--strip-components=1")
-                                  ;; Create .cargo-checksum.json with actual package checksum
+                                  ;; Create .cargo-checksum.json
                                   (call-with-output-file (string-append
                                                           crate-dir
                                                           "/.cargo-checksum.json")
@@ -190,11 +190,13 @@
                 (setenv "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS" "false")
                 (setenv "RUSTC_BOOTSTRAP" "1")
                 (setenv "RUSTFLAGS"
-                 "-Cforce-unwind-tables=yes -Cembed-bitcode=yes -Zforce-unstable-if-unmarked")
+                        (string-append "-Cforce-unwind-tables=yes "
+                                       "-Cembed-bitcode=yes "
+                                       "-Zforce-unstable-if-unmarked"))
                 (setenv "__CARGO_DEFAULT_LIB_METADATA" "stablestd")
                 ;; Host CC for build scripts (they run on the host)
                 (setenv "CC" host-gcc)
-                ;; Target-specific CC/AR for cross-compilation (underscores replace hyphens)
+                ;; Target CC/AR for cross-compilation
                 (setenv "CC_riscv32imac_unknown_xous_elf" riscv-gcc)
                 (setenv "AR_riscv32imac_unknown_xous_elf" riscv-ar)
                 (setenv "RUST_COMPILER_RT_ROOT"
@@ -219,8 +221,9 @@
                                "/lib/rustlib/riscv32imac-unknown-xous-elf/lib")))
                 (mkdir-p lib-dir)
                 ;; Write version file
-                (call-with-output-file (string-append out
-                                        "/lib/rustlib/riscv32imac-unknown-xous-elf/RUST_VERSION")
+                (call-with-output-file
+                    (string-append out "/lib/rustlib/"
+                                   "riscv32imac-unknown-xous-elf/RUST_VERSION")
                   (lambda (port)
                     (format port "~a~%"
                             #$version)))
@@ -281,8 +284,9 @@ applications.  This package propagates lld-18 as the linker.")
                  (base-rust (assoc-ref %build-inputs "rust"))
                  (bare-metal-sysroot (assoc-ref %build-inputs
                                       "rust-sysroot-riscv32imac-none-elf"))
-                 (xous-sysroot (assoc-ref %build-inputs
-                                          "rust-sysroot-riscv32imac-xous-elf")))
+                 (xous-sysroot
+                  (assoc-ref %build-inputs
+                             "rust-sysroot-riscv32imac-xous-elf")))
             (mkdir-p rustlib-out)
             ;; Copy base toolchain's rustlib
             (copy-recursively (string-append base-rust "/lib/rustlib")
@@ -373,9 +377,12 @@ targets for Xous development.")
               ("rust-sysroot-merged" ,rust-sysroot-merged)
               ("gcc-toolchain" ,gcc-toolchain)
               ("bash-minimal" ,bash-minimal)))
-    ;; Propagate linkers from sysroot packages so consumers don't need them
-    (propagated-inputs `(("rust-sysroot-riscv32imac-none-elf" ,rust-sysroot-riscv32imac-none-elf)
-                         ("rust-sysroot-riscv32imac-xous-elf" ,rust-sysroot-riscv32imac-xous-elf)))
+    ;; Propagate linkers from sysroot packages
+    (propagated-inputs
+     `(("rust-sysroot-riscv32imac-none-elf"
+        ,rust-sysroot-riscv32imac-none-elf)
+       ("rust-sysroot-riscv32imac-xous-elf"
+        ,rust-sysroot-riscv32imac-xous-elf)))
     (home-page "https://github.com/betrusted-io/rust")
     (synopsis "Rust toolchain with Xous and bare-metal target support")
     (description
