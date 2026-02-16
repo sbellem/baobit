@@ -397,26 +397,20 @@
 
                 (call-with-output-file ".cargo/config.toml"
                   (lambda (port)
-                    (display (string-append "[alias]\n"
+                    (display (string-append
+                              "[alias]\n"
                               "xtask = \"run --package xtask --\"\n\n"
                               "[build]\n"
-                              "rustflags = [\"--cfg\", \"crossbeam_no_atomic_64\"]
-
-"
+                              "rustflags = [\"--cfg\", \"crossbeam_no_atomic_64\"]\n\n"
                               "[target.riscv32imac-unknown-xous-elf]\n"
-                              "linker = \""
-                              ld-lld
-                              "\"\n"
-                              "rustflags = [\"-C\", \"linker-flavor=ld.lld\", \"--cfg\", 'curve25519_dalek_backend=\"u32e_backend\"']
-
-"
+                              "linker = \"" ld-lld "\"\n"
+                              "rustflags = [\"-C\", \"linker-flavor=ld.lld\", "
+                              "\"--cfg\", "
+                              "'curve25519_dalek_backend=\"u32e_backend\"']\n\n"
                               "[target.riscv32imac-unknown-none-elf]\n"
-                              "linker = \""
-                              riscv-ld
-                              "\"\n"
-                              "rustflags = [\"-C\", \"linker-flavor=ld\", \"--cfg\", 'curve25519_dalek_backend=\"fiat\"']
-
-"
+                              "linker = \"" riscv-ld "\"\n"
+                              "rustflags = [\"-C\", \"linker-flavor=ld\", "
+                              "\"--cfg\", 'curve25519_dalek_backend=\"fiat\"']\n\n"
                               vendor-config) port)))
 
                 (mkdir-p "locales/.cargo")
@@ -468,7 +462,7 @@
                   (copy-file elf-path
                              (string-append out "/" pkg-name ".elf")))))))))
     (native-inputs `(("rust-xous-toolchain" ,rust-xous-toolchain)
-                     ;; lld-18 and cross-binutils are propagated from rust-xous-toolchain sysroots
+                     ;; lld-18 & cross-binutils are propagated from xous sysroots
                      ("git" ,git)
                      ("tar" ,tar)
                      ("gzip" ,gzip)
