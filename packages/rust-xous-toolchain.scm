@@ -280,8 +280,9 @@ applications.  This package propagates lld-18 as the linker.")
                  (rustlib-out (string-append out "/lib/rustlib"))
                  (base-rust (assoc-ref %build-inputs "rust"))
                  (bare-metal-sysroot (assoc-ref %build-inputs
-                                                "rust-sysroot-riscv32imac-none-elf"))
-                 (xous-sysroot (assoc-ref %build-inputs "rust-sysroot-riscv32imac-xous-elf")))
+                                      "rust-sysroot-riscv32imac-none-elf"))
+                 (xous-sysroot (assoc-ref %build-inputs
+                                          "rust-sysroot-riscv32imac-xous-elf")))
             (mkdir-p rustlib-out)
             ;; Copy base toolchain's rustlib
             (copy-recursively (string-append base-rust "/lib/rustlib")
