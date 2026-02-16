@@ -8,4 +8,4 @@
   #:export (%baobit-commit))
 
 ;; Updated by CI: git rev-parse HEAD
-(define %baobit-commit "unknown")
+(define %baobit-commit "unspecified")

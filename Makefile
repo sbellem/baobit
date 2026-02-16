@@ -83,7 +83,8 @@ help:
 	@echo "    dabao-elf-analysis           - assembly listing for dabao"
 	@echo "    baosec-elf-analysis          - assembly listing for baosec"
 	@echo "  Config update:"
-	@echo "    update-config    - update xous-config.scm (use XOUS_CORE_COMMIT and/or RUST_XOUS_COMMIT)"
+	@echo "    update-config      - update xous-config.scm (use XOUS_CORE_COMMIT and/or RUST_XOUS_COMMIT)"
+	@echo "    set-baobit-commit  - set baobit commit in baobit-config.scm (for local testing)"
 	@echo ""
 	@echo "Options:"
 	@echo "  CHANNELS=file.scm  - use different channels file"
@@ -116,6 +117,12 @@ rv32imac-xous:
 
 toolchain:
 	$(TM) -e '(@ (rust-xous-toolchain) rust-xous-toolchain)'
+
+# Update baobit-config.scm with current git commit (optional, for local testing)
+set-baobit-commit:
+	@COMMIT=$$(git rev-parse HEAD 2>/dev/null || echo unknown); \
+	sed -i "s/define %baobit-commit \"[^\"]*\"/define %baobit-commit \"$$COMMIT\"/" packages/baobit-config.scm; \
+	echo "Set baobit commit to: $$COMMIT"
 
 # Firmware
 boot0:
