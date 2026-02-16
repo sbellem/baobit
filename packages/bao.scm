@@ -286,7 +286,7 @@
           ;; Phase 4: Set up cargo config
           (add-after 'patch-cargo-toml-git-deps 'setup-cargo
             (lambda* (#:key inputs #:allow-other-keys)
-              (let* ((rust-xous (assoc-ref inputs "rust-xous"))
+              (let* ((rust-xous (assoc-ref inputs "rust-xous-toolchain"))
                      (riscv-ld (search-input-file
                                 inputs "/bin/riscv32-none-elf-ld"))
                      (ld-lld (search-input-file
@@ -361,7 +361,7 @@
                 (when (file-exists? elf-path)
                   (copy-file elf-path (string-append out "/" pkg-name ".elf")))))))))
     (native-inputs
-     `(("rust-xous" ,rust-xous-toolchain)
+     `(("rust-xous-toolchain" ,rust-xous-toolchain)
        ;; lld-18 and cross-binutils are propagated from rust-xous-toolchain sysroots
        ("git" ,git)
        ("tar" ,tar)
@@ -377,9 +377,9 @@
               %git-dependencies)))
     (home-page "https://github.com/betrusted-io/xous-core")
     (synopsis (string-append "Xous " name " firmware (production)"))
-    (description (string-append "Production Xous firmware build for " name " target. "
-                                "Built from xous-core commit " %xous-short-hash ". "
-                                "Built with xtask command: " xtask-cmd))
+    (description (string-append "Production Xous firmware build for " name " target.  "
+                                "Built from xous-core commit " %xous-short-hash ".  "
+                                "Built with xtask command: " xtask-cmd "."))
     (license license:asl2.0)))
 
 ;;; =============================================================
@@ -435,9 +435,9 @@
       #~(begin
           (use-modules (guix build utils))
           (let ((out (assoc-ref %outputs "out"))
-                (boot0 #$(this-package-input "boot0"))
-                (boot1 #$(this-package-input "boot1"))
-                (alt-boot1 #$(this-package-input "alt-boot1")))
+                (boot0 #$(this-package-input "bao1x-boot0"))
+                (boot1 #$(this-package-input "bao1x-boot1"))
+                (alt-boot1 #$(this-package-input "bao1x-alt-boot1")))
             (mkdir-p out)
             (for-each
              (lambda (src)
@@ -447,13 +447,13 @@
                 (find-files src "\\.(uf2|img|bin)$")))
              (list boot0 boot1 alt-boot1))))))
     (inputs
-     `(("boot0" ,bao1x-boot0)
-       ("boot1" ,bao1x-boot1)
-       ("alt-boot1" ,bao1x-alt-boot1)))
+     `(("bao1x-boot0" ,bao1x-boot0)
+       ("bao1x-boot1" ,bao1x-boot1)
+       ("bao1x-alt-boot1" ,bao1x-alt-boot1)))
     (home-page "https://github.com/betrusted-io/xous-core")
     (synopsis "Combined bootloader package for bao1x")
     (description (string-append "Bootloader package containing boot0, boot1, "
-                                "and alt-boot1 for bao1x hardware. "
+                                "and alt-boot1 for bao1x hardware.  "
                                 "Built from xous-core commit " %xous-short-hash "."))
     (license license:asl2.0)))
 
