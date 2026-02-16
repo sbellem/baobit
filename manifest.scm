@@ -9,11 +9,10 @@
 (use-modules (guix packages)
              (bao))
 
-(packages->manifest
- (list bao1x-boot0
-       bao1x-boot1
-       bao1x-alt-boot1
-       bao1x-baremetal-dabao
-       dabao
-       dabao-helloworld
-       baosec))
+(packages->manifest (list bao1x-boot0
+                          bao1x-boot1
+                          bao1x-alt-boot1
+                          bao1x-baremetal-dabao
+                          dabao
+                          dabao-helloworld
+                          baosec))

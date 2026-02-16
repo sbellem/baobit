@@ -5,7 +5,8 @@
   #:use-module (guix packages)
   #:use-module (guix download)
   #:use-module (guix build-system cargo)
-  #:use-module ((guix licenses) #:prefix license:))
+  #:use-module ((guix licenses)
+                #:prefix license:))
 
 ;; Helper to create crate source origins
 (define (crate-source name version hash)
@@ -157,39 +158,38 @@
 
 ;; Export list of all sysroot crates for use by xous-sysroot build
 (define-public sysroot-crate-origins
-  (list
-   rust-addr2line-0.25.0
-   rust-adler2-2.0.1
-   rust-cc-1.2.0
-   rust-cfg-if-1.0.1
-   rust-dlmalloc-0.2.10
-   rust-fortanix-sgx-abi-0.6.1
-   rust-getopts-0.2.23
-   rust-gimli-0.32.0
-   rust-hashbrown-0.15.4
-   rust-hermit-abi-0.5.2
-   rust-libc-0.2.174
-   rust-memchr-2.7.5
-   rust-miniz-oxide-0.8.9
-   rust-object-0.37.1
-   rust-r-efi-5.3.0
-   rust-r-efi-alloc-2.1.0
-   rust-rand-0.9.2
-   rust-rand-core-0.9.3
-   rust-rand-xorshift-0.4.0
-   rust-rustc-demangle-0.1.25
-   rust-rustc-literal-escaper-0.0.5
-   rust-shlex-1.3.0
-   rust-unicode-width-0.2.1
-   rust-unwinding-0.2.7
-   rust-wasi-0.11.1
-   rust-windows-sys-0.59.0
-   rust-windows-targets-0.52.6
-   rust-windows-aarch64-gnullvm-0.52.6
-   rust-windows-aarch64-msvc-0.52.6
-   rust-windows-i686-gnu-0.52.6
-   rust-windows-i686-gnullvm-0.52.6
-   rust-windows-i686-msvc-0.52.6
-   rust-windows-x86-64-gnu-0.52.6
-   rust-windows-x86-64-gnullvm-0.52.6
-   rust-windows-x86-64-msvc-0.52.6))
+  (list rust-addr2line-0.25.0
+        rust-adler2-2.0.1
+        rust-cc-1.2.0
+        rust-cfg-if-1.0.1
+        rust-dlmalloc-0.2.10
+        rust-fortanix-sgx-abi-0.6.1
+        rust-getopts-0.2.23
+        rust-gimli-0.32.0
+        rust-hashbrown-0.15.4
+        rust-hermit-abi-0.5.2
+        rust-libc-0.2.174
+        rust-memchr-2.7.5
+        rust-miniz-oxide-0.8.9
+        rust-object-0.37.1
+        rust-r-efi-5.3.0
+        rust-r-efi-alloc-2.1.0
+        rust-rand-0.9.2
+        rust-rand-core-0.9.3
+        rust-rand-xorshift-0.4.0
+        rust-rustc-demangle-0.1.25
+        rust-rustc-literal-escaper-0.0.5
+        rust-shlex-1.3.0
+        rust-unicode-width-0.2.1
+        rust-unwinding-0.2.7
+        rust-wasi-0.11.1
+        rust-windows-sys-0.59.0
+        rust-windows-targets-0.52.6
+        rust-windows-aarch64-gnullvm-0.52.6
+        rust-windows-aarch64-msvc-0.52.6
+        rust-windows-i686-gnu-0.52.6
+        rust-windows-i686-gnullvm-0.52.6
+        rust-windows-i686-msvc-0.52.6
+        rust-windows-x86-64-gnu-0.52.6
+        rust-windows-x86-64-gnullvm-0.52.6
+        rust-windows-x86-64-msvc-0.52.6))
