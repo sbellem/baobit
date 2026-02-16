@@ -2,12 +2,13 @@
   <img src="logo-dark.jpeg" alt="baobit logo" width="900">
 </p>
 
+![Build bootloader](https://github.com/sbellem/baobit/actions/workflows/bootloader.yml/badge.svg)
+![Build dabao](https://github.com/sbellem/baobit/actions/workflows/dabao.yml/badge.svg)
+![Build baosec](https://github.com/sbellem/baobit/actions/workflows/baosec.yml/badge.svg)
+
 # baobit
 
 Guix channel for reproducible [Baochip][] firmware builds.
-
-![Build bootloader](https://github.com/sbellem/baobit/actions/workflows/bootloader.yml/badge.svg)
-![Build packages](https://github.com/sbellem/baobit/actions/workflows/build.yml/badge.svg)
 
 ## Overview
 
