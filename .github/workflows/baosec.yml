@@ -49,6 +49,12 @@ jobs:
             [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           echo '```' >> $GITHUB_STEP_SUMMARY
+          echo '**SHA512:**' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          for f in baosec/*.uf2 baosec/*.img baosec/*.bin; do
+            [ -f "$f" ] && sha512sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          echo '```' >> $GITHUB_STEP_SUMMARY
           echo '**MD5:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           for f in baosec/*.uf2 baosec/*.img baosec/*.bin; do

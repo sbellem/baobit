@@ -76,6 +76,12 @@ jobs:
             [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           echo '```' >> $GITHUB_STEP_SUMMARY
+          echo '**SHA512:**' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          for f in bao1x-${{ matrix.target }}/*.uf2 bao1x-${{ matrix.target }}/*.img bao1x-${{ matrix.target }}/*.bin bao1x-${{ matrix.target }}/*.elf; do
+            [ -f "$f" ] && sha512sum "$f" >> $GITHUB_STEP_SUMMARY
+          done
+          echo '```' >> $GITHUB_STEP_SUMMARY
           echo '**MD5:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           for f in bao1x-${{ matrix.target }}/*.uf2 bao1x-${{ matrix.target }}/*.img bao1x-${{ matrix.target }}/*.bin bao1x-${{ matrix.target }}/*.elf; do
