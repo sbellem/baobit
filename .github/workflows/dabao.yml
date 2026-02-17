@@ -10,6 +10,14 @@ on:
 jobs:
   dabao:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - root: dabao
+            target: dabao
+          - root: bao1x-baremetal-dabao
+            target: baremetal-dabao
     steps:
       - uses: actions/checkout@v4
 
@@ -24,20 +32,20 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
-      - name: Build dabao
-        run: make ROOT=dabao dabao
+      - name: Build ${{ matrix.root }}
+        run: make ROOT=${{ matrix.root }} ${{ matrix.target }}
 
       - name: Check reproducibility
-        run: make CHECK=1 dabao
+        run: make CHECK=1 ${{ matrix.target }}
 
       - name: Report results
         if: always()
         run: |
-          echo "## dabao" >> $GITHUB_STEP_SUMMARY
+          echo "## ${{ matrix.root }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Path" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          STORE_PATH=$(readlink -f dabao 2>/dev/null || echo 'Build failed')
+          STORE_PATH=$(readlink -f ${{ matrix.root }} 2>/dev/null || echo 'Build failed')
           echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -45,13 +53,13 @@ jobs:
           shopt -s nullglob
           echo '**SHA256:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in dabao/*.uf2 dabao/*.img dabao/*.bin; do
+          for f in ${{ matrix.root }}/*.uf2 ${{ matrix.root }}/*.img ${{ matrix.root }}/*.bin; do
             [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo '**MD5:**' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in dabao/*.uf2 dabao/*.img dabao/*.bin; do
+          for f in ${{ matrix.root }}/*.uf2 ${{ matrix.root }}/*.img ${{ matrix.root }}/*.bin; do
             [ -f "$f" ] && md5sum "$f" >> $GITHUB_STEP_SUMMARY
           done
           shopt -u nullglob
@@ -61,79 +69,14 @@ jobs:
         if: success()
         run: |
           mkdir -p artifacts
-          cp dabao/*.uf2 artifacts/ 2>/dev/null || true
-          cp dabao/*.img artifacts/ 2>/dev/null || true
-          cp dabao/*.bin artifacts/ 2>/dev/null || true
+          cp ${{ matrix.root }}/*.uf2 artifacts/ 2>/dev/null || true
+          cp ${{ matrix.root }}/*.img artifacts/ 2>/dev/null || true
+          cp ${{ matrix.root }}/*.bin artifacts/ 2>/dev/null || true
 
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: dabao
-          path: artifacts/
-          if-no-files-found: warn
-
-  bao1x-baremetal-dabao:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
-
-      - name: Build bao1x-baremetal-dabao
-        run: make ROOT=bao1x-baremetal-dabao baremetal-dabao
-
-      - name: Check reproducibility
-        run: make CHECK=1 baremetal-dabao
-
-      - name: Report results
-        if: always()
-        run: |
-          echo "## bao1x-baremetal-dabao" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Store Path" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          STORE_PATH=$(readlink -f bao1x-baremetal-dabao 2>/dev/null || echo 'Build failed')
-          echo "$STORE_PATH" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Artifact Checksums" >> $GITHUB_STEP_SUMMARY
-          shopt -s nullglob
-          echo '**SHA256:**' >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in bao1x-baremetal-dabao/*.uf2 bao1x-baremetal-dabao/*.img bao1x-baremetal-dabao/*.bin; do
-            [ -f "$f" ] && sha256sum "$f" >> $GITHUB_STEP_SUMMARY
-          done
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo '**MD5:**' >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          for f in bao1x-baremetal-dabao/*.uf2 bao1x-baremetal-dabao/*.img bao1x-baremetal-dabao/*.bin; do
-            [ -f "$f" ] && md5sum "$f" >> $GITHUB_STEP_SUMMARY
-          done
-          shopt -u nullglob
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
-      - name: Copy artifacts
-        if: success()
-        run: |
-          mkdir -p artifacts
-          cp bao1x-baremetal-dabao/*.uf2 artifacts/ 2>/dev/null || true
-          cp bao1x-baremetal-dabao/*.img artifacts/ 2>/dev/null || true
-          cp bao1x-baremetal-dabao/*.bin artifacts/ 2>/dev/null || true
-
-      - name: Upload artifacts
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: bao1x-baremetal-dabao
+          name: ${{ matrix.root }}
           path: artifacts/
           if-no-files-found: warn
