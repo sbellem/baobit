@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels/guix.scm', 'channels/codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -67,7 +67,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels/guix.scm', 'channels/codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -154,7 +154,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels/guix.scm', 'channels/codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -241,7 +241,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels/guix.scm', 'channels/codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -306,7 +306,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels/guix.scm', 'channels/codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -371,7 +371,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels/guix.scm', 'channels/codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -436,7 +436,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels/guix.scm', 'channels/codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -501,7 +501,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels/guix.scm', 'channels/codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -566,7 +566,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels/guix.scm', 'channels/codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -631,7 +631,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
+        channels: ['channels/guix.scm', 'channels/codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 

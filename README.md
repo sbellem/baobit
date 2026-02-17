@@ -79,11 +79,16 @@ make CHECK=1 boot0
 make CHECK=1 manifest
 ```
 
-Artifact hashes (SHA256 + MD5) are reported in CI job summaries.
+Artifact hashes (SHA256, SHA512, MD5) are reported in CI job summaries.
 
-## Related Projects
+## Firmware Verification
 
-- [xous-core][] - Xous operating system
+To verify that the firmware on your Baochip matches the expected reproducible build,
+see [VERIFY.md](VERIFY.md).
+
+## Links
+
+- [xous-core][] - Xous operating system source code repository, containing the source code for Baochip's firmware.
 - [Baochip][] - Open hardware security device
 
 [xous-core]: https://github.com/betrusted-io/xous-core

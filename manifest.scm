@@ -1,10 +1,10 @@
 ;;; Guix manifest for Baochip production firmware builds
 ;;;
 ;;; Build all production artifacts:
-;;;   guix time-machine -C channels.scm -- build -L packages -m manifest.scm
+;;;   guix time-machine -C channels/guix.scm -- build -L packages -m manifest.scm
 ;;;
 ;;; Verify reproducibility:
-;;;   guix time-machine -C channels.scm -- build -L packages -m manifest.scm --check
+;;;   guix time-machine -C channels/guix.scm -- build -L packages -m manifest.scm --check
 
 (use-modules (guix packages)
              (bao))

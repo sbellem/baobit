@@ -1,5 +1,5 @@
 ;; Channels configuration for baobit
-;; Usage: guix time-machine --channel=channels.scm -- build --load-path=packages -e '(@ (rust-xous) rust-xous)'
+;; Usage: guix time-machine --channels=channels/guix.scm -- build -L packages bao1x-boot0
 
 (list (channel
         (name 'guix)
