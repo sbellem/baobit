@@ -10,10 +10,6 @@ on:
 jobs:
   baosec:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channels: ['channels.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -29,15 +25,15 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build baosec
-        run: make CHANNELS=${{ matrix.channels }} ROOT=baosec baosec
+        run: make ROOT=baosec baosec
 
       - name: Check reproducibility
-        run: make CHANNELS=${{ matrix.channels }} CHECK=1 baosec
+        run: make CHECK=1 baosec
 
       - name: Report results
         if: always()
         run: |
-          echo "## baosec (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## baosec" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Path" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -73,6 +69,6 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: baosec-${{ matrix.channels }}
+          name: baosec
           path: artifacts/
           if-no-files-found: warn

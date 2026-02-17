@@ -10,10 +10,6 @@ on:
 jobs:
   bao1x-boot0:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channels: ['channels.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -29,13 +25,13 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build bao1x-boot0
-        run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot0 boot0
+        run: make ROOT=bao1x-boot0 boot0
 
       - name: Check reproducibility
-        run: make CHANNELS=${{ matrix.channels }} CHECK=1 boot0
+        run: make CHECK=1 boot0
 
       - name: Generate ELF analysis
-        run: make CHANNELS=${{ matrix.channels }} ROOT=boot0-elf-analysis boot0-elf-analysis
+        run: make ROOT=boot0-elf-analysis boot0-elf-analysis
 
       - name: Verify ELF analysis matches build
         run: |
@@ -60,7 +56,7 @@ jobs:
       - name: Report results
         if: always()
         run: |
-          echo "## bao1x-boot0 (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## bao1x-boot0" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Path" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -98,16 +94,12 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: bao1x-boot0-${{ matrix.channels }}
+          name: bao1x-boot0
           path: artifacts/
           if-no-files-found: warn
 
   bao1x-boot1:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channels: ['channels.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -123,13 +115,13 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build bao1x-boot1
-        run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot1 boot1
+        run: make ROOT=bao1x-boot1 boot1
 
       - name: Check reproducibility
-        run: make CHANNELS=${{ matrix.channels }} CHECK=1 boot1
+        run: make CHECK=1 boot1
 
       - name: Generate ELF analysis
-        run: make CHANNELS=${{ matrix.channels }} ROOT=boot1-elf-analysis boot1-elf-analysis
+        run: make ROOT=boot1-elf-analysis boot1-elf-analysis
 
       - name: Verify ELF analysis matches build
         run: |
@@ -154,7 +146,7 @@ jobs:
       - name: Report results
         if: always()
         run: |
-          echo "## bao1x-boot1 (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## bao1x-boot1" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Path" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -192,16 +184,12 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: bao1x-boot1-${{ matrix.channels }}
+          name: bao1x-boot1
           path: artifacts/
           if-no-files-found: warn
 
   bao1x-alt-boot1:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channels: ['channels.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -217,13 +205,13 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build bao1x-alt-boot1
-        run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-alt-boot1 alt-boot1
+        run: make ROOT=bao1x-alt-boot1 alt-boot1
 
       - name: Check reproducibility
-        run: make CHANNELS=${{ matrix.channels }} CHECK=1 alt-boot1
+        run: make CHECK=1 alt-boot1
 
       - name: Generate ELF analysis
-        run: make CHANNELS=${{ matrix.channels }} ROOT=alt-boot1-elf-analysis alt-boot1-elf-analysis
+        run: make ROOT=alt-boot1-elf-analysis alt-boot1-elf-analysis
 
       - name: Verify ELF analysis matches build
         run: |
@@ -248,7 +236,7 @@ jobs:
       - name: Report results
         if: always()
         run: |
-          echo "## bao1x-alt-boot1 (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## bao1x-alt-boot1" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Path" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -286,6 +274,6 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: bao1x-alt-boot1-${{ matrix.channels }}
+          name: bao1x-alt-boot1
           path: artifacts/
           if-no-files-found: warn

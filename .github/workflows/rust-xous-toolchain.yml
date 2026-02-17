@@ -10,10 +10,6 @@ on:
 jobs:
   rust-sysroot-riscv32imac-none-elf:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channels: ['channels.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -29,15 +25,15 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build rust-sysroot-riscv32imac-none-elf
-        run: make CHANNELS=${{ matrix.channels }} ROOT=sysroot-none-elf rv32imac-none
+        run: make ROOT=sysroot-none-elf rv32imac-none
 
       - name: Check reproducibility
-        run: make CHANNELS=${{ matrix.channels }} CHECK=1 rv32imac-none
+        run: make CHECK=1 rv32imac-none
 
       - name: Report results
         if: always()
         run: |
-          echo "## rust-sysroot-riscv32imac-none-elf (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## rust-sysroot-riscv32imac-none-elf" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Path" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -60,16 +56,12 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: sysroot-none-elf-${{ matrix.channels }}
+          name: sysroot-none-elf
           path: nars/
           if-no-files-found: warn
 
   rust-sysroot-riscv32imac-xous-elf:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channels: ['channels.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -85,15 +77,15 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build rust-sysroot-riscv32imac-xous-elf
-        run: make CHANNELS=${{ matrix.channels }} ROOT=sysroot-xous-elf rv32imac-xous
+        run: make ROOT=sysroot-xous-elf rv32imac-xous
 
       - name: Check reproducibility
-        run: make CHANNELS=${{ matrix.channels }} CHECK=1 rv32imac-xous
+        run: make CHECK=1 rv32imac-xous
 
       - name: Report results
         if: always()
         run: |
-          echo "## rust-sysroot-riscv32imac-xous-elf (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## rust-sysroot-riscv32imac-xous-elf" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Path" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -116,16 +108,12 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: sysroot-xous-elf-${{ matrix.channels }}
+          name: sysroot-xous-elf
           path: nars/
           if-no-files-found: warn
 
   rust-xous-toolchain:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channels: ['channels.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -141,15 +129,15 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build rust-xous-toolchain
-        run: make CHANNELS=${{ matrix.channels }} ROOT=rust-xous toolchain
+        run: make ROOT=rust-xous toolchain
 
       - name: Check reproducibility
-        run: make CHANNELS=${{ matrix.channels }} CHECK=1 toolchain
+        run: make CHECK=1 toolchain
 
       - name: Report results
         if: always()
         run: |
-          echo "## rust-xous-toolchain (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## rust-xous-toolchain" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Path" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -172,6 +160,6 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: rust-xous-${{ matrix.channels }}
+          name: rust-xous
           path: nars/
           if-no-files-found: warn

@@ -10,10 +10,6 @@ on:
 jobs:
   dry-run:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channels: ['channels.scm', 'channels-codeberg.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -33,7 +29,7 @@ jobs:
         run: |
           mkdir -p /tmp/drv
 
-          echo "## Dry-run Results (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## Dry-run Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Toolchain packages
@@ -42,7 +38,7 @@ jobs:
 
           echo "#### rust-sysroot-riscv32imac-none-elf" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          make DRY=1 CHANNELS=${{ matrix.channels }} rv32imac-none 2>&1 | tee /tmp/drv/rv32imac-none.log
+          make DRY=1 rv32imac-none 2>&1 | tee /tmp/drv/rv32imac-none.log
           DRV=$(grep -E "^/gnu/store/.*\.drv$" /tmp/drv/rv32imac-none.log | head -1 || true)
           if [ -n "$DRV" ]; then
             echo "$DRV" >> $GITHUB_STEP_SUMMARY
@@ -55,7 +51,7 @@ jobs:
 
           echo "#### rust-sysroot-riscv32imac-xous-elf (xous-sysroot)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          make DRY=1 CHANNELS=${{ matrix.channels }} rv32imac-xous 2>&1 | tee /tmp/drv/rv32imac-xous.log
+          make DRY=1 rv32imac-xous 2>&1 | tee /tmp/drv/rv32imac-xous.log
           DRV=$(grep -E "^/gnu/store/.*\.drv$" /tmp/drv/rv32imac-xous.log | head -1 || true)
           if [ -n "$DRV" ]; then
             echo "$DRV" >> $GITHUB_STEP_SUMMARY
@@ -68,7 +64,7 @@ jobs:
 
           echo "#### rust-xous-toolchain" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          make DRY=1 CHANNELS=${{ matrix.channels }} toolchain 2>&1 | tee /tmp/drv/toolchain.log
+          make DRY=1 toolchain 2>&1 | tee /tmp/drv/toolchain.log
           DRV=$(grep -E "^/gnu/store/.*\.drv$" /tmp/drv/toolchain.log | head -1 || true)
           if [ -n "$DRV" ]; then
             echo "$DRV" >> $GITHUB_STEP_SUMMARY
@@ -86,11 +82,10 @@ jobs:
           for pkg in boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec; do
             echo "#### $pkg" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            make DRY=1 CHANNELS=${{ matrix.channels }} $pkg 2>&1 | tee /tmp/drv/${pkg}.log
+            make DRY=1 $pkg 2>&1 | tee /tmp/drv/${pkg}.log
             DRV=$(grep -E "^/gnu/store/.*\.drv$" /tmp/drv/${pkg}.log | head -1 || true)
             if [ -n "$DRV" ]; then
               echo "$DRV" >> $GITHUB_STEP_SUMMARY
-              # Convert pkg name to valid output name (replace - with _)
               OUTPUT_NAME=$(echo "$pkg" | tr '-' '_')
               echo "${OUTPUT_NAME}_drv=$DRV" >> $GITHUB_OUTPUT
             else

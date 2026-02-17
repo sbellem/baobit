@@ -10,10 +10,6 @@ on:
 jobs:
   dabao:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channels: ['channels.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -29,15 +25,15 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build dabao
-        run: make CHANNELS=${{ matrix.channels }} ROOT=dabao dabao
+        run: make ROOT=dabao dabao
 
       - name: Check reproducibility
-        run: make CHANNELS=${{ matrix.channels }} CHECK=1 dabao
+        run: make CHECK=1 dabao
 
       - name: Report results
         if: always()
         run: |
-          echo "## dabao (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## dabao" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Path" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -73,16 +69,12 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: dabao-${{ matrix.channels }}
+          name: dabao
           path: artifacts/
           if-no-files-found: warn
 
   bao1x-baremetal-dabao:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        channels: ['channels.scm']
     steps:
       - uses: actions/checkout@v4
 
@@ -98,15 +90,15 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build bao1x-baremetal-dabao
-        run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-baremetal-dabao baremetal-dabao
+        run: make ROOT=bao1x-baremetal-dabao baremetal-dabao
 
       - name: Check reproducibility
-        run: make CHANNELS=${{ matrix.channels }} CHECK=1 baremetal-dabao
+        run: make CHECK=1 baremetal-dabao
 
       - name: Report results
         if: always()
         run: |
-          echo "## bao1x-baremetal-dabao (${{ matrix.channels }})" >> $GITHUB_STEP_SUMMARY
+          echo "## bao1x-baremetal-dabao" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Store Path" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -142,6 +134,6 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: bao1x-baremetal-dabao-${{ matrix.channels }}
+          name: bao1x-baremetal-dabao
           path: artifacts/
           if-no-files-found: warn
