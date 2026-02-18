@@ -4,8 +4,8 @@
 (list (channel
         (name 'guix)
         (url "https://github.com/sbellem/guix.git")
-        (branch "rust-team-v1.5.0-4274-ga832f7e68d")
-        (commit "a832f7e68d098837bc81e05b03d78adfa13e6cf7")
+        (branch "rust-team-v1.5.0-4275-g30fccbbc49")
+        (commit "30fccbbc4945f968acb7505ca628e30350b9f1d2")
         (introduction
          (make-channel-introduction "9edb3f66fd807b096b48283debdcddccfea34bad"
           (openpgp-fingerprint
