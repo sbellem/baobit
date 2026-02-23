@@ -124,9 +124,8 @@
                                                                  "/"
                                                                  crate-name))
                                        ;; Compute sha256 of the tarball for cargo checksum
-                                       (port (open-input-pipe (string-append
-                                                               "sha256sum "
-                                                               path)))
+                                       (port (open-pipe* OPEN_READ
+                                                         "sha256sum" path))
                                        (checksum-line (read-line port))
                                        (_ (close-pipe port))
                                        (checksum (car (string-split

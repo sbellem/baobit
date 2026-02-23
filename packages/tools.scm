@@ -130,9 +130,8 @@
                                        (crate-dir (string-append vendor-dir
                                                                  "/"
                                                                  crate-name))
-                                       (port (open-input-pipe (string-append
-                                                               "sha256sum "
-                                                               path)))
+                                       (port (open-pipe* OPEN_READ
+                                                         "sha256sum" path))
                                        (checksum-line (read-line port))
                                        (_ (close-pipe port))
                                        (checksum (car (string-split
@@ -216,12 +215,124 @@
        (list
         #:modules '((guix build utils)
                     (ice-9 popen)
-                    (ice-9 rdelim))
+                    (ice-9 rdelim)
+                    (ice-9 match))
         #:builder
         #~(begin
             (use-modules (guix build utils)
                          (ice-9 popen)
-                         (ice-9 rdelim))
+                         (ice-9 rdelim)
+                         (ice-9 match))
+
+            ;; Run PROGRAM with ARGS via execvp (no shell needed) and
+            ;; return its stdout as a string.
+            (define (capture-output program . args)
+              (let* ((port (apply open-pipe* OPEN_READ program args))
+                     (output (let loop ((lines '()))
+                               (let ((line (read-line port)))
+                                 (if (eof-object? line)
+                                     (string-join (reverse lines) "\n")
+                                     (loop (cons line lines)))))))
+                (close-pipe port)
+                output))
+
+            ;; Run PROGRAM with ARGS and append stdout to OUTPUT-FILE.
+            (define (run-append-to-file output-file program . args)
+              (let ((port (apply open-pipe* OPEN_READ program args))
+                    (out (open-file output-file "a")))
+                (let loop ()
+                  (let ((line (read-line port)))
+                    (unless (eof-object? line)
+                      (display line out)
+                      (newline out)
+                      (loop))))
+                (close-port out)
+                (close-pipe port)))
+
+            ;; Feed DATA string to PROGRAM's stdin via fork/exec
+            ;; and return the program's stdout as a string.
+            (define (pipe-string-capture data program . args)
+              (let* ((stdin-pipe (pipe))   ;parent writes, child reads
+                     (stdout-pipe (pipe))  ;child writes, parent reads
+                     (pid (primitive-fork)))
+                (if (zero? pid)
+                    ;; Child: connect pipes and exec
+                    (dynamic-wind
+                      (const #t)
+                      (lambda ()
+                        (close-port (cdr stdin-pipe))  ;close write end
+                        (close-port (car stdout-pipe)) ;close read end
+                        (dup2 (fileno (car stdin-pipe)) 0)  ;stdin
+                        (dup2 (fileno (cdr stdout-pipe)) 1) ;stdout
+                        (close-port (car stdin-pipe))
+                        (close-port (cdr stdout-pipe))
+                        (apply execlp program program args))
+                      (lambda () (primitive-exit 127)))
+                    ;; Parent: feed data, then read output
+                    (begin
+                      (close-port (car stdin-pipe))  ;close read end
+                      (close-port (cdr stdout-pipe)) ;close write end
+                      (display data (cdr stdin-pipe))
+                      (close-port (cdr stdin-pipe))
+                      (let ((result (let loop ((lines '()))
+                                      (let ((line (read-line
+                                                   (car stdout-pipe))))
+                                        (if (eof-object? line)
+                                            (string-join (reverse lines) "\n")
+                                            (loop (cons line lines)))))))
+                        (close-port (car stdout-pipe))
+                        (waitpid pid)
+                        result)))))
+
+            ;; Feed DATA string to PROGRAM's stdin via fork/exec,
+            ;; with stdout appended to OUTPUT-FILE.
+            (define (pipe-string-to-file output-file data program . args)
+              (let* ((in+out (pipe))
+                     (pid (primitive-fork)))
+                (if (zero? pid)
+                    ;; Child: connect pipe to stdin, stdout to file
+                    (dynamic-wind
+                      (const #t)
+                      (lambda ()
+                        (close-port (cdr in+out))
+                        (dup2 (fileno (car in+out)) 0)
+                        (close-port (car in+out))
+                        (let ((fd (open-fdes output-file
+                                             (logior O_WRONLY O_CREAT O_APPEND)
+                                             #o644)))
+                          (dup2 fd 1)
+                          (close-fdes fd))
+                        (apply execlp program program args))
+                      (lambda () (primitive-exit 127)))
+                    ;; Parent: write data to pipe, then wait for child
+                    (begin
+                      (close-port (car in+out))
+                      (display data (cdr in+out))
+                      (close-port (cdr in+out))
+                      (waitpid pid)))))
+
+            ;; Run a pipeline of commands and append final stdout to
+            ;; OUTPUT-FILE.  Each element of COMMANDS is (program arg ...).
+            ;; Works without /bin/sh by using execvp + manual pipe plumbing.
+            (define (pipeline-to-file output-file commands)
+              (match commands
+                (((prog args ...))
+                 ;; Single command: run and append
+                 (apply run-append-to-file output-file prog args))
+                (((prog1 args1 ...) rest ...)
+                 ;; Multi-stage: capture first command output, then
+                 ;; pipe through each subsequent command
+                 (let loop ((data (apply capture-output prog1 args1))
+                            (remaining rest))
+                   (match remaining
+                     (((prog args ...))
+                      ;; Last command: pipe data through, append to file
+                      (apply pipe-string-to-file output-file data prog args))
+                     (((prog args ...) rest ...)
+                      ;; Intermediate command: pipe data through, capture
+                      (loop (apply pipe-string-capture data prog args)
+                            rest)))))))
+
             (let* ((out (assoc-ref %outputs "out"))
                    (firmware #$(this-package-input "firmware"))
                    (binutils #$(this-package-native-input "binutils"))
@@ -242,75 +353,46 @@
                                                      "-elf-analysis.rpt"))
                                  (summary (string-append out "/" base
                                            "-elf-analysis-summary.rpt"))
-                                 ;; Compute checksums using pipes
-                                 (sha256 (let* ((port (open-input-pipe (string-append
-                                                                        sha256sum
-                                                                        " "
-                                                                        elf)))
-                                                (line (read-line port)))
-                                           (close-pipe port)
-                                           (car (string-split line #\space))))
-                                 (md5 (let* ((port (open-input-pipe (string-append
-                                                                     md5sum
-                                                                     " " elf)))
-                                             (line (read-line port)))
-                                        (close-pipe port)
-                                        (car (string-split line #\space))))
-                                 ;; Helper to write provenance header
-                                 (write-header (lambda (port)
-                                                 (format port
-                                                  "; Assembly Report~%")
-                                                 (format port
-                                                         "; Firmware: ~a~%"
-                                                         firmware)
-                                                 (format port "; ELF: ~a~%"
-                                                         elf)
-                                                 (format port "; SHA256: ~a~%"
-                                                         sha256)
-                                                 (format port "; MD5: ~a~%"
-                                                         md5)
-                                                 (format port ";~%~%"))))
-                            ;; Generate full report
+                                 ;; Compute checksums via open-pipe* (no shell)
+                                 (sha256 (car (string-split
+                                               (capture-output sha256sum elf)
+                                               #\space)))
+                                 (md5 (car (string-split
+                                            (capture-output md5sum elf)
+                                            #\space)))
+                                 (write-header
+                                  (lambda (port)
+                                    (format port "; Assembly Report~%")
+                                    (format port "; Firmware: ~a~%" firmware)
+                                    (format port "; ELF: ~a~%" elf)
+                                    (format port "; SHA256: ~a~%" sha256)
+                                    (format port "; MD5: ~a~%" md5)
+                                    (format port ";~%~%"))))
+                            ;; Full report
                             (format #t "Generating full report for ~a...~%"
                                     base)
-                            (call-with-output-file rpt
-                              write-header)
-                            (system (string-append objdump " -h " elf " >> "
-                                                   rpt))
-                            (system (string-append nm
-                                     " -r --size-sort --print-size "
-                                     elf
-                                     " | "
-                                     demangle
-                                     " >> "
-                                     rpt))
-                            (system (string-append objdump
-                                                   " -S -l -d "
-                                                   elf
-                                                   " | "
-                                                   demangle
-                                                   " >> "
-                                                   rpt))
+                            (call-with-output-file rpt write-header)
+                            (run-append-to-file rpt objdump "-h" elf)
+                            (pipeline-to-file rpt
+                              `((,nm "-r" "--size-sort" "--print-size" ,elf)
+                                (,demangle)))
+                            (pipeline-to-file rpt
+                              `((,objdump "-S" "-l" "-d" ,elf)
+                                (,demangle)))
                             (format #t "Done: ~a~%" rpt)
-                            ;; Generate summary (headers + top 30 symbols, no disassembly)
+                            ;; Summary report
                             (format #t "Generating summary for ~a...~%" base)
-                            (call-with-output-file summary
-                              write-header)
-                            (system (string-append objdump " -h " elf " >> "
-                                                   summary))
-                            (system (string-append "echo '' >> " summary))
-                            (system (string-append
-                                     "echo '; Top 30 largest symbols:' >> "
-                                     summary))
-                            (system (string-append nm
-                                     " -r --size-sort --print-size "
-                                     elf
-                                     " | "
-                                     demangle
-                                     " | "
-                                     head-cmd
-                                     " -30 >> "
-                                     summary))
+                            (call-with-output-file summary write-header)
+                            (run-append-to-file summary objdump "-h" elf)
+                            (let ((port (open-file summary "a")))
+                              (newline port)
+                              (display "; Top 30 largest symbols:" port)
+                              (newline port)
+                              (close-port port))
+                            (pipeline-to-file summary
+                              `((,nm "-r" "--size-sort" "--print-size" ,elf)
+                                (,demangle)
+                                (,head-cmd "-30")))
                             (format #t "Done: ~a~%" summary))) elf-files)))))
       (inputs `(("firmware" ,firmware-pkg)))
       (native-inputs `(("binutils" ,riscv32-none-elf-binutils)
