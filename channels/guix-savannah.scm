@@ -1,9 +1,9 @@
-;; Channels configuration for baobit (Codeberg mirror)
-;; Usage: guix time-machine --channels=channels/guix.scm -- build -L packages bao1x-boot0
+;; Channels configuration for baobit
+;; Usage: guix time-machine --channels=channels/savannah.scm -- build -L packages bao1x-boot0
 
 (list (channel
         (name 'guix)
-        (url "https://codeberg.org/guix/guix.git")
+        (url "https://git.savannah.gnu.org/git/guix.git")
         (branch "master")
         (commit "7e7487166b02aa41d42e96a1dfccaceda7fefc12")
         (introduction

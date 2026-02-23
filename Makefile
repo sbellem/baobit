@@ -7,7 +7,7 @@
 #   make boot0                  # Build bao1x-boot0
 #   make all-dry                # Dry-run all packages
 #
-#   CHANNELS=channels/codeberg.scm make toolchain
+#   CHANNELS=channels/guix.scm make toolchain
 #   make rv32imac-none DRY=1
 #   make boot0 SUBS=baobit ROOT=boot0
 #   make boot0 CHECK=1
