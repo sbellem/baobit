@@ -1,21 +1,17 @@
-# Baochip Bootloader Verification
-This guide explains how to verify that the bootloader firmware on your Baochip
-is authentic and matches the source code.
+# Baochip Firmware Verification
 
-There are two levels of verification:
-
-1. **Signature verification** -- verify that the `.img` files carry valid
-   Ed25519 signatures from a known Baochip signing key.
-2. **Reproducible build verification** -- rebuild the firmware from source
-   with Guix and compare hashes against what the device reports.
+Verify that the firmware on your Baochip matches the public source code by
+rebuilding it from source and comparing hashes. Optionally verify Ed25519
+signatures on the official release images.
 
 ## Prerequisites
-- [Rust toolchain](https://rustup.rs/) (for `verify-binary`)
+
 - [GNU Guix](https://guix.gnu.org/) (for reproducible builds)
 - Internet access to fetch channel sources
 
-## Step 1: Run the Audit Command
-Run the `audit` command on your Baochip to get the firmware information:
+## Step 1: Get Audit Data from Your Device
+
+Run the `audit` command on your Baochip:
 
 ```
 Configured board type: Dabao
@@ -33,24 +29,82 @@ Boot1 receipts OK
 Boot1 anti-rollback OK
 ```
 
-Note the following values:
-- `boot0 code only` -- the SHA-512 hash to verify against the expected source code
-- `boot1 code only` -- the SHA-512 hash to verify against the expected source code
+Note these values:
+- `boot0 code only` / `boot1 code only` -- SHA-512 hashes of the firmware code
 - `baobit toolchain` -- the baobit commit used to build the bootloaders
 
-## Step 2: Verify Signatures
-The `verify-binary` tool in `tools/` parses signed `.img` files, checks their
-Ed25519ph or FIDO2 signatures against the embedded public keys, and reports
-the hashes.
+## Step 2: Rebuild from Source
 
-### Build the tool
+Download the channels file for your device's baobit commit and rebuild:
+
 ```bash
-cd tools
-cargo build --release
+# Truncate the baobit commit to 8 characters
+BAOBIT_COMMIT_SHORT=441559d7
+
+# Download the channels file
+curl --proto '=https' --tlsv1.2 -sSfLo baobit.scm \
+  "https://raw.githubusercontent.com/sbellem/baobit/refs/heads/main/channels/baobit.${BAOBIT_COMMIT_SHORT}.scm"
+
+# Build the bootloaders
+guix time-machine --channels=baobit.scm -- build bao1x-boot0 --root=boot0
+guix time-machine --channels=baobit.scm -- build bao1x-boot1 --root=boot1
 ```
 
-### Verify the images
+The `--root` flag creates a symlink to the build output, e.g.:
+```
+boot0 -> /gnu/store/0d18xr4wlwkhycz6m96ds60mk2w9vc22-bao1x-boot0-v0.10.0-61-g5397e1b48
+```
+
+## Step 3: Compare Hashes
+
+Hash the presign images (firmware code without the signature block) and
+compare against the audit output:
+
 ```bash
+sha512sum boot0/bao1x-boot0-presign.img
+sha512sum boot1/bao1x-boot1-presign.img
+```
+
+Verify directly:
+
+```bash
+echo "563802e7f10fd0ca0a1c700c6313eff624aa57d9cd88d3c33af4b720eff5480432e01c116925a324a96e12d92953d7cb6076ea4557a22058e1a61be4c2b4dee2  boot0/bao1x-boot0-presign.img" | sha512sum --check --strict
+boot0/bao1x-boot0-presign.img: OK
+```
+
+If hashes match, the firmware on your device is identical to what you built
+from the public source code.
+
+## Step 4: Verify Signatures on Official Release Images
+
+Official signed firmware images are published at
+`https://ci.betrusted.io/releases/`. Download them and verify their Ed25519
+signatures using the `verify-binary` tool.
+
+### Build the tool
+
+```bash
+git clone https://github.com/sbellem/baobit && cd baobit
+guix shell nss-certs rust rust:cargo -- cargo build --release --manifest-path tools/Cargo.toml
+```
+
+If you already have a Rust toolchain installed, you can use it directly:
+
+```bash
+cd tools && cargo build --release && cd ..
+```
+
+Or download a pre-built binary from the
+[releases page](https://github.com/sbellem/baobit/releases).
+
+### Download and verify
+
+```bash
+VERSION=v0.10.0
+RELEASES_URL="https://ci.betrusted.io/releases/${VERSION}/baochip"
+curl --proto '=https' --tlsv1.2 -sSfLO ${RELEASES_URL}/baochip/bootloader/bao1x-boot0.img"
+curl --proto '=https' --tlsv1.2 -sSfLO ${RELEASES_URL}/baochip/bootloader/bao1x-boot1.img"
+
 ./tools/target/release/verify-binary bao1x-boot0.img bao1x-boot1.img
 ```
 
@@ -69,78 +123,39 @@ Anti-rollback:  1
 Verification:   PASSED
 ```
 
-If verification passes, the firmware image carries a valid signature from a
-known Baochip key. The `Presign SHA512` value should match `boot0 code only`
-(or `boot1 code only`) from the audit output. The `Padded SHA512` matches
-the official release hashes at `ci.betrusted.io`.
+## Step 5: Cross-Check All Three Sources
 
-## Step 3: Reproducible Build (Optional)
-For full verification, rebuild the firmware from source and compare hashes.
+At this point you have three independent sources of truth:
 
-### Download the channels file
-1. Set `BAOBIT_COMMIT_SHORT` to the baobit toolchain commit, **truncated to 8 characters**,
-from the audit output:
+| Source | What it provides |
+|--------|-----------------|
+| Device audit | `code only` SHA-512 hashes + baobit commit |
+| Your build | Presign images rebuilt from source |
+| Official release | Signed `.img` files from ci.betrusted.io |
 
-```bash
-BAOBIT_COMMIT_SHORT=441559d7
-```
+Verify consistency:
 
-2. Download the channels file:
-```bash
-curl --proto '=https' --tlsv1.2 -sSfLo baobit.scm "https://raw.githubusercontent.com/sbellem/baobit/refs/heads/main/channels/baobit.${BAOBIT_COMMIT_SHORT}.scm"
-```
+- **`Presign SHA512`** from `verify-binary` should match **`boot0 code only`**
+  (or `boot1 code only`) from the device audit.
+- **`sha512sum`** of your rebuilt `bao1x-boot0-presign.img` should match the
+  same `boot0 code only` hash.
+- **`Padded SHA512`** from `verify-binary` should match the corresponding hash
+  in the release `hashes.txt`.
 
-### Build the firmware
-Build `bao1x-boot0` and `bao1x-boot1` using `guix time-machine`:
-
-```bash
-guix time-machine --channels=baobit.scm -- build bao1x-boot0 --root=boot0
-guix time-machine --channels=baobit.scm -- build bao1x-boot1 --root=boot1
-```
-
-The output will be under the directory passed to `--root`, which will be a symlink to
-the store path, e.g.:
-```bash
-/gnu/store/abc123...-bao1x-boot0
-```
-
-### Compare hashes
-Hash the built firmware and compare against the audit output:
-
-```bash
-sha512sum boot0/bao1x-boot0-presign.img
-sha512sum boot1/bao1x-boot1-presign.img
-```
-
-Compare these hashes with the `boot0 code only` and `boot1 code only` values
-from the audit output:
-
-```bash
-echo "563802e7f10fd0ca0a1c700c6313eff624aa57d9cd88d3c33af4b720eff5480432e01c116925a324a96e12d92953d7cb6076ea4557a22058e1a61be4c2b4dee2 boot0/bao1x-boot0-presign.img" | sha512sum --check --strict
-boot0/bao1x-boot0-presign.img: OK
-```
-
-If hashes match, you know:
-1. The signature on the image is valid (Step 2)
-2. The firmware is identical to what you built from source
-3. The signing key is one of the known Baochip keys
+If all three agree:
+1. The firmware on your device matches the public source code
+2. The official release images carry valid signatures from a known Baochip key
+3. Your reproducible build produces the same binary
 
 ## Troubleshooting
-### Build takes a long time
-The first build downloads and compiles the Rust toolchain, which can take significant
-time and disk space. Subsequent builds will be faster due to caching.
 
-### Substitutes
-To speed up builds, you can use substitute servers if available:
-```bash
-guix time-machine --channels=baobit.scm -- build bao1x-boot0 \
-  --substitute-urls="https://ci.guix.moe https://bordeaux.guix.gnu.org"
-```
+### Build takes a long time
+The first build compiles the Rust toolchain from source, which requires
+significant time and disk space. Subsequent builds are faster due to caching.
 
 ### Hash mismatch
-If the hashes don't match:
-1. Ensure you're using the exact baobit commit from the audit output
-2. Verify your Guix installation is working correctly
+1. Ensure you're using the exact baobit commit from the audit output.
+2. Verify your Guix installation is working correctly.
 3. Try building with `--check` to verify reproducibility:
    ```bash
    guix time-machine --channels=baobit.scm -- build bao1x-boot0 --check
