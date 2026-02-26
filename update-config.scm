@@ -1,3 +1,18 @@
+#!/usr/bin/env -S guix repl -L packages --
+!#
+;;; Update xous-config.scm with commit hashes, git describe, and guix hashes
+;;;
+;;; Usage:
+;;;   ./update-config.scm --xous-core-commit COMMIT
+;;;   ./update-config.scm --rust-xous-commit COMMIT
+;;;   ./update-config.scm --xous-core-commit COMMIT --rust-xous-commit COMMIT
+;;;   ./update-config.scm -x COMMIT --clone-depth 100
+;;;
+;;; Options:
+;;;   -x, --xous-core-commit COMMIT   Update xous-core config
+;;;   -r, --rust-xous-commit COMMIT   Update betrusted-io/rust config
+;;;   -d, --clone-depth N             Git clone depth (default: 60)
+
 (use-modules (xous-config)
              (ice-9 popen)
              (ice-9 rdelim)
