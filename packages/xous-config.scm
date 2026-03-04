@@ -1,3 +1,12 @@
+;;; Baochip firmware build configuration
+;;;
+;;; This file is meant to be updated via update-config.scm
+;;;
+;;; To update: edit baobit.toml, then run: make update-config
+;;;
+;;; If you see "fatal: No names found, cannot describe anything",
+;;; increase clone-depth in baobit.toml.
+
 (define-module (xous-config)
   #:export (%xous-commit %xous-guix-hash
                          %xous-git-describe
@@ -6,24 +15,15 @@
                          %rust-xous-commit
                          %rust-xous-guix-hash))
 
-;;; Xous-core release configuration
-;;;
-;;; To prepare a new release:
-;;;   make update-config XOUS_CORE_COMMIT=abc123...
-;;;   make boot0
-;;;
-;;; If you see "fatal: No names found, cannot describe anything",
-;;; pass a larger clone depth: CLONE_DEPTH=100
-
 ;; GitHub owner (user or org)
 (define %xous-owner
   "betrusted-io")
 (define %xous-git-describe
-  "v0.10.0-61-g5397e1b48")
+  "v0.10.0-28-g31738d94e")
 (define %xous-commit
-  "5397e1b488c081566cef2c0e597e05426f67c1c3")
+  "31738d94efec851f4bad313af0b46759e7fb907d")
 (define %xous-guix-hash
-  "1ylzls6v4y5gbjx4yibkg5ndd90h4rlcvmdagkdkapa7wmhw8dbx")
+  "022wr7hp9x2037mj6g46rr42dshhrsy61z6k2bnk8bwpfm259aj4")
 
 ;; Rust toolchain version (e.g., "1.90", "1.91")
 ;; Package modules resolve this to rust-X.YZ

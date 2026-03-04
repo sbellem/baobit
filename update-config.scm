@@ -1,78 +1,57 @@
 #!/usr/bin/env -S guix repl -L packages --
 !#
-;;; Update xous-config.scm with commit hashes, git describe, and guix hashes
+;;; Read user-defined values from baobit.toml, compute derived values
+;;; (guix hashes, git-describe), and write everything to xous-config.scm.
 ;;;
 ;;; Usage:
-;;;   ./update-config.scm --xous-core-commit COMMIT
-;;;   ./update-config.scm --rust-xous-commit COMMIT
-;;;   ./update-config.scm --xous-core-commit COMMIT --rust-xous-commit COMMIT
-;;;   ./update-config.scm -x COMMIT --clone-depth 100
-;;;
-;;; Options:
-;;;   -x, --xous-core-commit COMMIT   Update xous-core config
-;;;   -r, --rust-xous-commit COMMIT   Update betrusted-io/rust config
-;;;   -d, --clone-depth N             Git clone depth (default: 60)
+;;;   ./update-config.scm
+;;;   ./update-config.scm --config path/to/config.toml
+;;;   ./update-config.scm --help
 
-(use-modules (xous-config)
+(use-modules (guix build toml)
              (ice-9 popen)
              (ice-9 rdelim)
              (ice-9 textual-ports)
              (ice-9 regex)
              (ice-9 getopt-long))
 
-(define %default-clone-depth
-  60)
+(define %default-toml
+  "baobit.toml")
 (define %config-file
   "packages/xous-config.scm")
 
 ;; ANSI colors
-(define %red
-  "\x1b[31m")
-(define %blue
-  "\x1b[34m")
-(define %green
-  "\x1b[32m")
-(define %cyan
-  "\x1b[36m")
-(define %reset
-  "\x1b[0m")
+(define %red "\x1b[31m")
+(define %blue "\x1b[34m")
+(define %green "\x1b[32m")
+(define %cyan "\x1b[36m")
+(define %reset "\x1b[0m")
 
 (define option-spec
-  '((xous-core-commit (single-char #\x)
-                      (value #t))
-    (rust-xous-commit (single-char #\r)
-                      (value #t))
-    (clone-depth (single-char #\d)
-                 (value #t))
+  '((config (single-char #\c) (value #t))
     (help (single-char #\h))))
 
 (define (usage)
   (format #t "Usage: ~a [OPTIONS]~%"
           (car (command-line)))
   (format #t "~%")
-  (format #t "Options:~%")
-  (format #t "  -x, --xous-core-commit COMMIT   Update xous-core config~%")
-  (format #t
-   "  -r, --rust-xous-commit COMMIT   Update betrusted-io/rust config~%")
-  (format #t
-          "  -d, --clone-depth N             Git clone depth (default: ~a)~%"
-          %default-clone-depth)
-  (format #t "  -h, --help                      Show this help~%")
+  (format #t "Read baobit.toml, compute guix hashes, update xous-config.scm.~%")
   (format #t "~%")
-  (format #t "Examples:~%")
-  (format #t "  ~a -x abc123~%"
-          (car (command-line)))
-  (format #t "  ~a -x abc123 -r def456~%"
-          (car (command-line)))
-  (format #t "  ~a --xous-core-commit abc123 --clone-depth 100~%"
-          (car (command-line)))
+  (format #t "Options:~%")
+  (format #t "  -c, --config FILE   Config file (default: ~a)~%"
+          %default-toml)
+  (format #t "  -h, --help          Show this help~%")
   (exit 1))
 
 (define (run-command cmd)
-  "Run CMD and return stdout as string, trimmed."
+  "Run CMD and return stdout as string, or #f on failure/no output."
   (let* ((port (open-input-pipe cmd))
-         (output (read-line port)))
-    (close-pipe port) output))
+         (output (read-line port))
+         (status (close-pipe port)))
+    (if (and (zero? (status:exit-val status))
+             (not (eof-object? output)))
+        output
+        #f)))
 
 (define (make-temp-dir)
   (run-command "mktemp -d"))
@@ -88,8 +67,8 @@
   "Update VAR in the config file with VALUE."
   (let* ((content (call-with-input-file %config-file
                     get-string-all))
-         (pattern (string-append "\\(define " var " \"[^\"]*\"\\)"))
-         (replacement (string-append "(define " var " \"" value "\")"))
+         (pattern (string-append "\\(define " var "[ \n]+\"[^\"]*\"\\)"))
+         (replacement (string-append "(define " var "\n  \"" value "\")"))
          (updated (regexp-substitute/global #f
                                             pattern
                                             content
@@ -100,97 +79,109 @@
       (lambda (port)
         (put-string port updated)))))
 
-(define (update-repo! commit
-                      url
-                      owner
-                      upstream-url
-                      clone-depth
-                      vars)
+(define %initial-depth 10)
+(define %deepen-step 50)
+(define %max-depth 500)
+
+(define (git-describe-with-deepen)
+  "Try git describe, deepening history until it succeeds or hits the limit."
+  (let loop ((depth %initial-depth))
+    (let ((result (run-command "git describe --long --abbrev=9")))
+      (cond
+       (result result)
+       ((>= depth %max-depth)
+        (format #t "  ~a(git describe failed after deepening to ~a)~a~%"
+                %red depth %reset)
+        #f)
+       (else
+        (let ((new-depth (+ depth %deepen-step)))
+          (format #t "  ~a(deepening history to ~a)~a~%"
+                  %cyan new-depth %reset)
+          (run-git "fetch" "--deepen" (number->string %deepen-step))
+          (loop new-depth)))))))
+
+(define (update-repo! commit url owner upstream-url vars)
   "Clone repo, compute hash and git-describe, update config vars."
   (let ((tmpdir (make-temp-dir))
-        (start-dir (getcwd)))
-    (dynamic-wind (lambda ()
-                    #t)
-                  (lambda ()
-                    (format #t "~%")
-                    (run-git "clone"
-                             "--depth"
-                             (number->string clone-depth)
-                             "--tags"
-                             url
-                             tmpdir)
-                    (chdir tmpdir)
-                    ;; Fetch tags from upstream (needed when building from forks)
-                    (when upstream-url
-                      (unless (string=? owner "betrusted-io")
-                        (run-git "remote" "add" "upstream" upstream-url)
-                        (run-git "fetch" "--tags" "upstream")))
-                    (run-git "fetch" "--depth"
-                             (number->string clone-depth) "origin" commit)
-                    (run-git "-c" "advice.detachedHead=false" "checkout"
-                             commit)
-                    (let ((describe (run-command
-                                     "git describe --long --abbrev=9"))
-                          (hash (run-command "guix hash -rx .")))
-                      (format #t "~%")
-                      (format #t "  commit:  ~a~a~a~%" %red commit %reset)
-                      (when describe
-                        (format #t "  version: ~a~a~a~%" %green describe
-                                %reset))
-                      (format #t "  hash:    ~a~a~a~%" %cyan hash %reset)
-                      (format #t "~%")
-                      (chdir start-dir)
-                      ;; Update config variables
-                      (update-config! (assoc-ref vars
-                                                 'commit) commit)
-                      (when (and (assoc-ref vars
-                                            'describe) describe)
-                        (update-config! (assoc-ref vars
-                                                   'describe) describe))
-                      (update-config! (assoc-ref vars
-                                                 'hash) hash)
-                      (format #t "~a✓ Updated ~a~a~%~%" %cyan %config-file
-                              %reset)))
-                  (lambda ()
-                    (chdir start-dir)
-                    (system* "rm" "-rf" tmpdir)))))
+        (start-dir (getcwd))
+        (need-describe? (assoc-ref vars 'describe)))
+    (dynamic-wind
+      (lambda () #t)
+      (lambda ()
+        (format #t "~%")
+        (run-git "clone" "--depth" (number->string %initial-depth)
+                 "--tags" url tmpdir)
+        (chdir tmpdir)
+        ;; Fetch tags from upstream (needed when building from forks)
+        (when upstream-url
+          (unless (string=? owner "betrusted-io")
+            (run-git "remote" "add" "upstream" upstream-url)
+            (run-git "fetch" "--tags" "upstream")))
+        (run-git "fetch" "--depth" (number->string %initial-depth)
+                 "origin" commit)
+        (run-git "-c" "advice.detachedHead=false" "checkout" commit)
+        (let ((describe (if need-describe?
+                            (git-describe-with-deepen)
+                            #f))
+              (hash (run-command "guix hash -rx .")))
+          (format #t "~%")
+          (format #t "  commit:  ~a~a~a~%" %red commit %reset)
+          (when describe
+            (format #t "  version: ~a~a~a~%" %green describe %reset))
+          (format #t "  hash:    ~a~a~a~%" %cyan hash %reset)
+          (format #t "~%")
+          (chdir start-dir)
+          ;; Update config variables
+          (update-config! (assoc-ref vars 'commit) commit)
+          (when (and need-describe? describe)
+            (update-config! need-describe? describe))
+          (update-config! (assoc-ref vars 'hash) hash)
+          (format #t "~a✓ Updated ~a~a~%~%" %cyan %config-file %reset)))
+      (lambda ()
+        (chdir start-dir)
+        (system* "rm" "-rf" tmpdir)))))
+
+(define (toml-ref config keys)
+  "Look up KEYS in parsed TOML CONFIG. KEYS is a list of strings."
+  (recursive-assoc-ref config keys))
 
 (define (main args)
-  (let* ((options (getopt-long args option-spec))
-         (xous-commit (option-ref options
-                                  'xous-core-commit #f))
-         (rust-commit (option-ref options
-                                  'rust-xous-commit #f))
-         (clone-depth (or (and=> (option-ref options
-                                             'clone-depth #f) string->number)
-                          %default-clone-depth))
-         (help? (option-ref options
-                            'help #f)))
-    (when (or help?
-              (and (not xous-commit)
-                   (not rust-commit)))
-      (usage))
-    ;; Update xous-core
-    (when xous-commit
+  (let* ((options (getopt-long args option-spec
+                               #:stop-at-first-non-option #t))
+         (help? (option-ref options 'help #f))
+         (rest (option-ref options '() '()))
+         (toml-path (option-ref options 'config %default-toml)))
+    (when (or help? (not (null? rest))) (usage))
+    (unless (file-exists? toml-path)
+      (format (current-error-port) "Error: ~a not found~%" toml-path)
+      (exit 1))
+    (let* ((config (parse-toml-file toml-path))
+           ;; xous-core settings
+           (xous-owner (toml-ref config '("xous-core" "owner")))
+           (xous-commit (toml-ref config '("xous-core" "commit")))
+           ;; rust-xous settings
+           (rust-version (toml-ref config '("rust-xous" "version")))
+           (rust-commit (toml-ref config '("rust-xous" "commit"))))
+      ;; Update xous-core
       (format #t "~%~a=== Updating xous-core ===~a~%" %green %reset)
+      (update-config! "%xous-owner" xous-owner)
+      (update-config! "%rust-version" rust-version)
       (update-repo! xous-commit
-                    (string-append "https://github.com/" %xous-owner
+                    (string-append "https://github.com/" xous-owner
                                    "/xous-core")
-                    %xous-owner
+                    xous-owner
                     "https://github.com/betrusted-io/xous-core"
-                    clone-depth
                     '((commit . "%xous-commit")
                       (describe . "%xous-git-describe")
-                      (hash . "%xous-guix-hash"))))
-    ;; Update rust-xous
-    (when rust-commit
+                      (hash . "%xous-guix-hash")))
+      ;; Update rust-xous
       (format #t "~%~a=== Updating betrusted-io/rust ===~a~%" %green %reset)
       (update-repo! rust-commit
                     "https://github.com/betrusted-io/rust"
                     "betrusted-io"
-                    #f ;no upstream for rust fork
-                    clone-depth
-                    '((commit . "%rust-xous-commit") (describe . #f) ;no git-describe for rust
+                    #f
+                    '((commit . "%rust-xous-commit")
+                      (describe . #f)
                       (hash . "%rust-xous-guix-hash"))))))
 
 (main (command-line))

@@ -1,0 +1,16 @@
+# Baobit release configuration
+#
+# User-defined values. Derived values (guix hashes, git-describe) are
+# computed by update-config.scm and written to packages/xous-config.scm.
+#
+# Usage:
+#   1. Edit this file
+#   2. Run: make update-config
+
+[xous-core]
+owner = "betrusted-io"
+commit = "31738d94efec851f4bad313af0b46759e7fb907d"
+
+[rust-xous]
+version = "1.90"
+commit = "ca03bea71ce37fac6696f67020d27d4172f65771"

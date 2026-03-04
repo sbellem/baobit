@@ -83,7 +83,7 @@ help:
 	@echo "    dabao-elf-analysis           - assembly listing for dabao"
 	@echo "    baosec-elf-analysis          - assembly listing for baosec"
 	@echo "  Config update:"
-	@echo "    update-config      - update xous-config.scm (use XOUS_CORE_COMMIT and/or RUST_XOUS_COMMIT)"
+	@echo "    update-config      - update xous-config.scm from baobit.toml"
 	@echo ""
 	@echo "Options:"
 	@echo "  CHANNELS=file.scm  - use different channels file"
@@ -174,15 +174,6 @@ dry-toolchain:
 	$(MAKE) DRY=1 toolchain
 
 # Update xous-config.scm with commit, git-describe, and guix hash
-# Usage: make update-config XOUS_CORE_COMMIT=abc123
-#        make update-config RUST_XOUS_COMMIT=def456
-#        make update-config XOUS_CORE_COMMIT=abc123 RUST_XOUS_COMMIT=def456
-XOUS_CORE_COMMIT ?=
-RUST_XOUS_COMMIT ?=
-CLONE_DEPTH ?=
-
+# Usage: edit baobit.toml, then run make update-config
 update-config:
-	./update-config.scm \
-		$(if $(XOUS_CORE_COMMIT),--xous-core-commit $(XOUS_CORE_COMMIT)) \
-		$(if $(RUST_XOUS_COMMIT),--rust-xous-commit $(RUST_XOUS_COMMIT)) \
-		$(if $(CLONE_DEPTH),--clone-depth $(CLONE_DEPTH))
+	./update-config.scm
