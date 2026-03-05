@@ -29,13 +29,22 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build bao1x-${{ matrix.target }}
-        run: make ROOT=bao1x-${{ matrix.target }} ${{ matrix.target }}
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make ROOT=bao1x-${{ matrix.target }} ${{ matrix.target }}
 
       - name: Check reproducibility
-        run: make CHECK=1 ${{ matrix.target }}
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make CHECK=1 ${{ matrix.target }}
 
       - name: Generate ELF analysis
-        run: make ROOT=${{ matrix.target }}-elf-analysis ${{ matrix.target }}-elf-analysis
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make ROOT=${{ matrix.target }}-elf-analysis ${{ matrix.target }}-elf-analysis
 
       - name: Verify ELF analysis matches build
         run: |

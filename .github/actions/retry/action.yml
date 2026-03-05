@@ -1,0 +1,34 @@
+name: Retry
+description: Run a command with retry on failure
+
+inputs:
+  run:
+    description: Command to execute
+    required: true
+  retries:
+    description: Maximum number of attempts
+    default: '3'
+  retry-delay:
+    description: Seconds to wait between retries
+    default: '30'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        CMD: ${{ inputs.run }}
+        RETRIES: ${{ inputs.retries }}
+        RETRY_DELAY: ${{ inputs.retry-delay }}
+      run: |
+        for attempt in $(seq 1 "$RETRIES"); do
+          if eval "$CMD"; then
+            exit 0
+          fi
+          if [ "$attempt" -lt "$RETRIES" ]; then
+            echo "::warning::Attempt $attempt/$RETRIES failed, retrying in ${RETRY_DELAY}s..."
+            sleep "$RETRY_DELAY"
+          fi
+        done
+        echo "::error::All $RETRIES attempts failed"
+        exit 1

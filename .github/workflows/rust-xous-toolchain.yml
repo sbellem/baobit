@@ -25,10 +25,16 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build rust-sysroot-riscv32imac-none-elf
-        run: make ROOT=sysroot-none-elf rv32imac-none
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make ROOT=sysroot-none-elf rv32imac-none
 
       - name: Check reproducibility
-        run: make CHECK=1 rv32imac-none
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make CHECK=1 rv32imac-none
 
       - name: Report results
         if: always()
@@ -77,10 +83,16 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build rust-sysroot-riscv32imac-xous-elf
-        run: make ROOT=sysroot-xous-elf rv32imac-xous
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make ROOT=sysroot-xous-elf rv32imac-xous
 
       - name: Check reproducibility
-        run: make CHECK=1 rv32imac-xous
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make CHECK=1 rv32imac-xous
 
       - name: Report results
         if: always()
@@ -129,10 +141,16 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build rust-xous-toolchain
-        run: make ROOT=rust-xous toolchain
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make ROOT=rust-xous toolchain
 
       - name: Check reproducibility
-        run: make CHECK=1 toolchain
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make CHECK=1 toolchain
 
       - name: Report results
         if: always()

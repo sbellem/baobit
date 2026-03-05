@@ -25,10 +25,16 @@ jobs:
           sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
 
       - name: Build baosec
-        run: make ROOT=baosec baosec
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make ROOT=baosec baosec
 
       - name: Check reproducibility
-        run: make CHECK=1 baosec
+        timeout-minutes: 120
+        uses: ./.github/actions/retry
+        with:
+          run: make CHECK=1 baosec
 
       - name: Report results
         if: always()
