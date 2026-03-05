@@ -1,0 +1,52 @@
+name: Build and run verify-binary
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify-binary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Build verify-binary
+        run: guix shell nss-certs rust rust:cargo -- cargo build --release --manifest-path tools/Cargo.toml
+
+      - name: Download official release images
+        run: |
+          VERSION=v0.10.0
+          curl -sSfLO "https://ci.betrusted.io/releases/${VERSION}/baochip/bootloader/bao1x-boot0.img"
+          curl -sSfLO "https://ci.betrusted.io/releases/${VERSION}/baochip/bootloader/bao1x-boot1.img"
+
+      - name: Verify signatures (human-readable)
+        run: ./tools/target/release/verify-binary bao1x-boot0.img bao1x-boot1.img
+
+      - name: Verify signatures (JSON)
+        run: |
+          ./tools/target/release/verify-binary --json bao1x-boot0.img bao1x-boot1.img | tee verify-results.json
+
+          # Assert all images passed verification
+          TOTAL=$(jq 'length' verify-results.json)
+          PASSED=$(jq '[.[] | select(.verification == "PASSED")] | length' verify-results.json)
+          if [ "$PASSED" -ne "$TOTAL" ]; then
+            echo "ERROR: only $PASSED/$TOTAL image(s) passed verification"
+            exit 1
+          fi
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## verify-binary results" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat verify-results.json >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
