@@ -2,10 +2,10 @@ name: Dry-run builds
 
 on:
   push:
-    branches: [main, ci*]
-    tags: ['v*', 'xous-core-*']
+    branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   dry-run:
