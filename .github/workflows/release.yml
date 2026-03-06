@@ -1,0 +1,252 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v0.10.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-firmware:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - root: bao1x-boot0
+            target: boot0
+            elf-analysis: true
+          - root: bao1x-boot1
+            target: boot1
+            elf-analysis: true
+          - root: bao1x-alt-boot1
+            target: alt-boot1
+            elf-analysis: true
+          - root: bao1x-baremetal-dabao
+            target: baremetal-dabao
+            elf-analysis: false
+          - root: dabao
+            target: dabao
+            elf-analysis: false
+          - root: baosec
+            target: baosec
+            elf-analysis: false
+    steps:
+      - name: Validate tag format
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "ERROR: Tag '$TAG' does not match semver format (e.g. v0.10.0)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Authorize substitute servers
+        run: |
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+      - name: Build ${{ matrix.root }}
+        run: make ROOT=${{ matrix.root }} ${{ matrix.target }}
+
+      - name: Check reproducibility
+        run: make CHECK=1 ${{ matrix.target }}
+
+      - name: Generate ELF analysis
+        if: matrix.elf-analysis
+        run: make ROOT=${{ matrix.target }}-elf-analysis ${{ matrix.target }}-elf-analysis
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p artifacts
+          cp ${{ matrix.root }}/*.uf2 artifacts/ 2>/dev/null || true
+          cp ${{ matrix.root }}/*.img artifacts/ 2>/dev/null || true
+          cp ${{ matrix.root }}/*.bin artifacts/ 2>/dev/null || true
+          cp ${{ matrix.root }}/*.elf artifacts/ 2>/dev/null || true
+          if [ "${{ matrix.elf-analysis }}" = "true" ]; then
+            cp ${{ matrix.target }}-elf-analysis/*.rpt artifacts/ 2>/dev/null || true
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.root }}
+          path: artifacts/
+          if-no-files-found: error
+
+  verify-signatures:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Install Guix
+        uses: sbellem/guix-install-action@dev
+        with:
+          version: "1.5.0"
+          pullAfterInstall: false
+
+      - name: Build verify-binary
+        run: guix shell nss-certs rust rust:cargo -- cargo build --release --manifest-path tools/Cargo.toml
+
+      - name: Download official release images
+        id: download
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BASE="https://ci.betrusted.io/releases/${VERSION}/baochip/bootloader"
+          mkdir -p official
+          FAILED=0
+          for img in bao1x-boot0.img bao1x-boot1.img bao1x-alt-boot1.img; do
+            if curl -sSfL -o "official/${img}" "${BASE}/${img}"; then
+              echo "Downloaded ${img}"
+            else
+              echo "WARNING: Failed to download ${img}"
+              FAILED=1
+            fi
+          done
+          echo "download_failed=$FAILED" >> $GITHUB_OUTPUT
+
+      - name: Verify signatures
+        if: steps.download.outputs.download_failed != '1'
+        run: |
+          IMAGES=""
+          for img in official/bao1x-boot0.img official/bao1x-boot1.img official/bao1x-alt-boot1.img; do
+            [ -f "$img" ] && IMAGES="$IMAGES $img"
+          done
+          ./tools/target/release/verify-binary --json $IMAGES | tee verify-results.json
+
+          TOTAL=$(jq 'length' verify-results.json)
+          PASSED=$(jq '[.[] | select(.verification == "PASSED")] | length' verify-results.json)
+          if [ "$PASSED" -ne "$TOTAL" ]; then
+            echo "WARNING: only $PASSED/$TOTAL image(s) passed verification"
+          fi
+
+      - name: Upload verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-verify-results
+          path: verify-results.json
+          if-no-files-found: warn
+
+  release:
+    needs: [build-firmware, verify-signatures]
+    if: always() && needs.build-firmware.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: release-assets
+
+      - name: List collected artifacts
+        run: ls -lhR release-assets/
+
+      - name: Generate checksums
+        working-directory: release-assets
+        run: |
+          shopt -s nullglob
+          FILES=(*.img *.uf2 *.bin)
+          shopt -u nullglob
+          if [ ${#FILES[@]} -gt 0 ]; then
+            sha256sum "${FILES[@]}" | sort -k2 > sha256sums.txt
+            sha512sum "${FILES[@]}" | sort -k2 > sha512sums.txt
+            md5sum    "${FILES[@]}" | sort -k2 > md5sums.txt
+          fi
+
+      - name: Copy channels file
+        run: |
+          REV=$(git rev-parse --short=8 HEAD)
+          cp channels/guix.scm "release-assets/baobit.${REV}.scm"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ inputs.tag || github.ref_name }}"
+
+          VERIFY_NOTE=""
+          if [ -f release-assets/verify-results.json ]; then
+            PASSED=$(jq '[.[] | select(.verification == "PASSED")] | length' release-assets/verify-results.json)
+            TOTAL=$(jq 'length' release-assets/verify-results.json)
+            VERIFY_NOTE="Official release images verified: ${PASSED}/${TOTAL} passed. See \`verify-results.json\`."
+          else
+            VERIFY_NOTE="Official release images were not available for verification."
+          fi
+
+          gh release create "$TAG" \
+            --title "baobit ${VERSION}" \
+            --notes "$(cat <<EOF
+          Reproducible firmware build for Baochip ${VERSION}.
+
+          Complements the official release at
+          https://ci.betrusted.io/releases/${VERSION}/baochip/
+
+          ## Artifacts
+
+          Firmware images rebuilt from source using Guix.
+
+          The following presign images should be **bit-for-bit identical** to the
+          official betrusted-io release:
+
+          - \`bao1x-boot0-presign.img\`
+          - \`bao1x-boot1-presign.img\`
+          - \`bao1x-alt-boot1-presign.img\`
+
+          The signed \`.img\` files differ because the official release uses a
+          production signing key while these builds use a dev key.
+
+          ## Signature Verification
+
+          ${VERIFY_NOTE}
+
+          ## Checksums
+
+          See \`sha256sums.txt\`, \`sha512sums.txt\`, and \`md5sums.txt\`.
+
+          ## Reproducibility
+
+          Build channels pinned in \`baobit.<rev>.scm\`. Use this file with
+          \`guix time-machine\` to reproduce the exact same build.
+          EOF
+          )" \
+            release-assets/*
