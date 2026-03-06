@@ -14,6 +14,24 @@ permissions:
   contents: write
 
 jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      has-tools: ${{ steps.check.outputs.has-tools }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - name: Check if verify tooling exists
+        id: check
+        run: |
+          if [ -d tools ]; then
+            echo "has-tools=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-tools=false" >> $GITHUB_OUTPUT
+            echo "::warning::tools/ not found at this revision, skipping signature verification"
+          fi
+
   build-firmware:
     runs-on: ubuntu-latest
     strategy:
@@ -91,6 +109,8 @@ jobs:
           if-no-files-found: error
 
   verify-signatures:
+    needs: preflight
+    if: needs.preflight.outputs.has-tools == 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -155,7 +175,7 @@ jobs:
           if-no-files-found: warn
 
   release:
-    needs: [build-firmware, verify-signatures]
+    needs: [preflight, build-firmware, verify-signatures]
     if: always() && needs.build-firmware.result == 'success'
     runs-on: ubuntu-latest
     steps:
