@@ -215,7 +215,13 @@ jobs:
       - name: Copy channels file
         run: |
           REV=$(git rev-parse --short=8 HEAD)
-          cp channels/guix.scm "release-assets/baobit.${REV}.scm"
+          if [ -f channels/guix.scm ]; then
+            cp channels/guix.scm "release-assets/baobit.${REV}.scm"
+          elif [ -f channels.scm ]; then
+            cp channels.scm "release-assets/baobit.${REV}.scm"
+          else
+            echo "::warning::No channels file found, skipping"
+          fi
 
       - name: Create GitHub Release
         env:
