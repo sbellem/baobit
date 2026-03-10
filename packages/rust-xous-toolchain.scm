@@ -52,14 +52,14 @@
 
 ;;; LLVM compiler-rt source (needed for builtins)
 ;;; Fetched separately to avoid the 2GB+ recursive llvm-project fetch.
-;;; From betrusted-io/rust 1.90.0-xous .gitmodules: rust-lang/llvm-project branch rustc/20.1-2025-07-13
+;;; From betrusted-io/rust 1.93.0-xous .gitmodules: rust-lang/llvm-project branch rustc/21.1-2025-08-01
 (define llvm-compiler-rt-source
   (origin
     (method git-fetch)
     (uri (git-reference (url "https://github.com/rust-lang/llvm-project")
-                        (commit "e8a2ffcf322f45b8dce82c65ab27a3e2430a6b51")))
+                        (commit "rustc/21.1-2025-08-01")))
     (file-name "llvm-compiler-rt-source")
-    (sha256 (base32 "1cw6a6blx0qfvlsp2p5wzdlnqnnnlcfjz5xx24vlcsm43vp0mk1a"))))
+    (sha256 (base32 "1ay736pskcf4fzrdqw9kw5z6dskf329hjxw4xyk88g688nmzbzmi"))))
 
 ;;; Backtrace-rs source (needed for std's backtrace support)
 ;;; Commit from betrusted-io/rust 1.90.0-xous submodule reference

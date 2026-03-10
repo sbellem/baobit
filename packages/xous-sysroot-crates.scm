@@ -1,5 +1,6 @@
 ;;; Crate sources for rust-sysroot-riscv32imac-xous-elf dependencies
-;;; Generated for betrusted-io/rust 1.90.0-xous branch
+;;; Generated from betrusted-io/rust 1.93.0-xous library/Cargo.lock
+;;; using: guix import crate --lockfile=../rust/library/Cargo.lock sysroot
 
 (define-module (xous-sysroot-crates)
   #:use-module (guix packages)
@@ -16,9 +17,9 @@
     (file-name (string-append "rust-" name "-" version ".tar.gz"))
     (sha256 (base32 hash))))
 
-(define-public rust-addr2line-0.25.0
-  (crate-source "addr2line" "0.25.0"
-                "0hqxvdi3d4n6ffz3bndm6aq9kvg36ga7wxnv3n8hql2jcsizrjws"))
+(define-public rust-addr2line-0.25.1
+  (crate-source "addr2line" "0.25.1"
+                "0jwb96gv17vdr29hbzi0ha5q6jkpgjyn7rjlg5nis65k41rk0p8v"))
 
 (define-public rust-adler2-2.0.1
   (crate-source "adler2" "2.0.1"
@@ -28,49 +29,57 @@
   (crate-source "cc" "1.2.0"
                 "1f3dndil5f864zhyc6f513xshs6b8mlxn0ipqww0awdxb0hr7sqs"))
 
-(define-public rust-cfg-if-1.0.1
-  (crate-source "cfg-if" "1.0.1"
-                "0s0jr5j797q1vqjcd41l0v5izlmlqm7lxy512b418xz5r65mfmcm"))
+(define-public rust-cfg-if-1.0.4
+  (crate-source "cfg-if" "1.0.4"
+                "008q28ajc546z5p2hcwdnckmg0hia7rnx52fni04bwqkzyrghc4k"))
 
-(define-public rust-dlmalloc-0.2.10
-  (crate-source "dlmalloc" "0.2.10"
-                "0l9xy7nzlpqfx69ibjzvqyq7ys9516fgllp8vfsznsbvwnz2sfps"))
+(define-public rust-dlmalloc-0.2.11
+  (crate-source "dlmalloc" "0.2.11"
+                "0c7sygw9dlczgjkk6kvp2sxrz81zc51rgrycah69kp8n1csgxk86"))
+
+(define-public rust-foldhash-0.2.0
+  (crate-source "foldhash" "0.2.0"
+                "1nvgylb099s11xpfm1kn2wcsql080nqmnhj1l25bp3r2b35j9kkp"))
 
 (define-public rust-fortanix-sgx-abi-0.6.1
   (crate-source "fortanix-sgx-abi" "0.6.1"
                 "113gvr6azrpcixbbinl7scyzdpsrd3dd079pyja86gmqspnqbz2y"))
 
-(define-public rust-getopts-0.2.23
-  (crate-source "getopts" "0.2.23"
-                "1ha8a3l3w68yrw3qjfzj0pak0rppf1yghign03iri1llxdisx9nb"))
+(define-public rust-getopts-0.2.24
+  (crate-source "getopts" "0.2.24"
+                "1pylvsmq7fillnxmd6g58r7igdrlby412q37ws41z39va2ngpr6g"))
 
-(define-public rust-gimli-0.32.0
-  (crate-source "gimli" "0.32.0"
-                "1zlgga0cmfc4cpi68mmrmz6w4x9j3rpzimly9w809vy91ds3smlk"))
+(define-public rust-gimli-0.32.3
+  (crate-source "gimli" "0.32.3"
+                "1iqk5xznimn5bfa8jy4h7pa1dv3c624hzgd2dkz8mpgkiswvjag6"))
 
-(define-public rust-hashbrown-0.15.4
-  (crate-source "hashbrown" "0.15.4"
-                "1mg045sm1nm00cwjm7ndi80hcmmv1v3z7gnapxyhd9qxc62sqwar"))
+(define-public rust-hashbrown-0.16.1
+  (crate-source "hashbrown" "0.16.1"
+                "004i3njw38ji3bzdp9z178ba9x3k0c1pgy8x69pj7yfppv4iq7c4"))
 
 (define-public rust-hermit-abi-0.5.2
   (crate-source "hermit-abi" "0.5.2"
                 "1744vaqkczpwncfy960j2hxrbjl1q01csm84jpd9dajbdr2yy3zw"))
 
-(define-public rust-libc-0.2.174
-  (crate-source "libc" "0.2.174"
-                "0xl7pqvw7g2874dy3kjady2fjr4rhj5lxsnxkkhr5689jcr6jw8i"))
+(define-public rust-libc-0.2.177
+  (crate-source "libc" "0.2.177"
+                "0xjrn69cywaii1iq2lib201bhlvan7czmrm604h5qcm28yps4x18"))
 
-(define-public rust-memchr-2.7.5
-  (crate-source "memchr" "2.7.5"
-                "1h2bh2jajkizz04fh047lpid5wgw2cr9igpkdhl3ibzscpd858ij"))
+(define-public rust-memchr-2.7.6
+  (crate-source "memchr" "2.7.6"
+                "0wy29kf6pb4fbhfksjbs05jy2f32r2f3r1ga6qkmpz31k79h0azm"))
 
 (define-public rust-miniz-oxide-0.8.9
   (crate-source "miniz_oxide" "0.8.9"
                 "05k3pdg8bjjzayq3rf0qhpirq9k37pxnasfn4arbs17phqn6m9qz"))
 
-(define-public rust-object-0.37.1
-  (crate-source "object" "0.37.1"
-                "0jhvws8f1rq4mba5czpmj3jk11x41f4m1l5knil1g7h6c4qr9z83"))
+(define-public rust-moto-rt-0.15.2
+  (crate-source "moto-rt" "0.15.2"
+                "0cfhr15wz7iim0fwci71g14vj2d9rj0ck7n0jb5h4d9vglwbrx0b"))
+
+(define-public rust-object-0.37.3
+  (crate-source "object" "0.37.3"
+                "1zikiy9xhk6lfx1dn2gn2pxbnfpmlkn0byd7ib1n720x0cgj0xpz"))
 
 (define-public rust-r-efi-5.3.0
   (crate-source "r-efi" "5.3.0"
@@ -92,9 +101,9 @@
   (crate-source "rand_xorshift" "0.4.0"
                 "0njsn25pis742gb6b89cpq7jp48v9n23a9fvks10yczwks8n4fai"))
 
-(define-public rust-rustc-demangle-0.1.25
-  (crate-source "rustc-demangle" "0.1.25"
-                "0kxq6m0drr40434ch32j31dkg00iaf4zxmqg7sqxajhcz0wng7lq"))
+(define-public rust-rustc-demangle-0.1.26
+  (crate-source "rustc-demangle" "0.1.26"
+                "1kja3nb0yhlm4j2p1hl8d7sjmn2g9fa1s4pj0qma5kj2lcndkxsn"))
 
 (define-public rust-rustc-literal-escaper-0.0.5
   (crate-source "rustc-literal-escaper" "0.0.5"
@@ -104,92 +113,109 @@
   (crate-source "shlex" "1.3.0"
                 "0r1y6bv26c1scpxvhg2cabimrmwgbp4p3wy6syj9n0c4s3q2znhg"))
 
-(define-public rust-unicode-width-0.2.1
-  (crate-source "unicode-width" "0.2.1"
-                "0k0mlq7xy1y1kq6cgv1r2rs2knn6rln3g3af50rhi0dkgp60f6ja"))
+(define-public rust-unwinding-0.2.8
+  (crate-source "unwinding" "0.2.8"
+                "0vdx3c8183gz5rkxl5bxiflc0hi94lgkkif8kprrj5plbs22qqb0"))
 
-(define-public rust-unwinding-0.2.7
-  (crate-source "unwinding" "0.2.7"
-                "0lc7m3sh18g0bnhw3xidqlrlxf4rxgri8jhbm7ci7qpdpz1gd03x"))
+(define-public rust-vex-sdk-0.27.1
+  (crate-source "vex-sdk" "0.27.1"
+                "1xlv6wilgynvrx4wyd458a2z8ngzgxqwpqimid3ha4yymwazxrbr"))
 
-(define-public rust-wasi-0.11.1
+(define-public rust-wasi-0.11.1+wasi-snapshot-preview1
   (crate-source "wasi" "0.11.1+wasi-snapshot-preview1"
                 "0jx49r7nbkbhyfrfyhz0bm4817yrnxgd3jiwwwfv0zl439jyrwyc"))
 
-(define-public rust-windows-sys-0.59.0
-  (crate-source "windows-sys" "0.59.0"
-                "0fw5672ziw8b3zpmnbp9pdv1famk74f1l9fcbc3zsrzdg56vqf0y"))
+(define-public rust-wasi-0.14.4+wasi-0.2.4
+  (crate-source "wasi" "0.14.4+wasi-0.2.4"
+                "0jpcy0qg3bvsclwyk1d11r3isd320rpickrl5hy9rx7s4jjg99c8"))
 
-(define-public rust-windows-targets-0.52.6
-  (crate-source "windows-targets" "0.52.6"
-                "0wwrx625nwlfp7k93r2rra568gad1mwd888h1jwnl0vfg5r4ywlv"))
+(define-public rust-windows-link-0.2.1
+  (crate-source "windows-link" "0.2.1"
+                "1rag186yfr3xx7piv5rg8b6im2dwcf8zldiflvb22xbzwli5507h"))
 
-(define-public rust-windows-aarch64-gnullvm-0.52.6
-  (crate-source "windows_aarch64_gnullvm" "0.52.6"
-                "1lrcq38cr2arvmz19v32qaggvj8bh1640mdm9c2fr877h0hn591j"))
+(define-public rust-windows-sys-0.60.2
+  (crate-source "windows-sys" "0.60.2"
+                "1jrbc615ihqnhjhxplr2kw7rasrskv9wj3lr80hgfd42sbj01xgj"))
 
-(define-public rust-windows-aarch64-msvc-0.52.6
-  (crate-source "windows_aarch64_msvc" "0.52.6"
-                "0sfl0nysnz32yyfh773hpi49b1q700ah6y7sacmjbqjjn5xjmv09"))
+(define-public rust-windows-targets-0.53.5
+  (crate-source "windows-targets" "0.53.5"
+                "1wv9j2gv3l6wj3gkw5j1kr6ymb5q6dfc42yvydjhv3mqa7szjia9"))
 
-(define-public rust-windows-i686-gnu-0.52.6
-  (crate-source "windows_i686_gnu" "0.52.6"
-                "02zspglbykh1jh9pi7gn8g1f97jh1rrccni9ivmrfbl0mgamm6wf"))
+(define-public rust-windows-aarch64-gnullvm-0.53.1
+  (crate-source "windows_aarch64_gnullvm" "0.53.1"
+                "0lqvdm510mka9w26vmga7hbkmrw9glzc90l4gya5qbxlm1pl3n59"))
 
-(define-public rust-windows-i686-gnullvm-0.52.6
-  (crate-source "windows_i686_gnullvm" "0.52.6"
-                "0rpdx1537mw6slcpqa0rm3qixmsb79nbhqy5fsm3q2q9ik9m5vhf"))
+(define-public rust-windows-aarch64-msvc-0.53.1
+  (crate-source "windows_aarch64_msvc" "0.53.1"
+                "01jh2adlwx043rji888b22whx4bm8alrk3khjpik5xn20kl85mxr"))
 
-(define-public rust-windows-i686-msvc-0.52.6
-  (crate-source "windows_i686_msvc" "0.52.6"
-                "0rkcqmp4zzmfvrrrx01260q3xkpzi6fzi2x2pgdcdry50ny4h294"))
+(define-public rust-windows-i686-gnu-0.53.1
+  (crate-source "windows_i686_gnu" "0.53.1"
+                "18wkcm82ldyg4figcsidzwbg1pqd49jpm98crfz0j7nqd6h6s3ln"))
 
-(define-public rust-windows-x86-64-gnu-0.52.6
-  (crate-source "windows_x86_64_gnu" "0.52.6"
-                "0y0sifqcb56a56mvn7xjgs8g43p33mfqkd8wj1yhrgxzma05qyhl"))
+(define-public rust-windows-i686-gnullvm-0.53.1
+  (crate-source "windows_i686_gnullvm" "0.53.1"
+                "030qaxqc4salz6l4immfb6sykc6gmhyir9wzn2w8mxj8038mjwzs"))
 
-(define-public rust-windows-x86-64-gnullvm-0.52.6
-  (crate-source "windows_x86_64_gnullvm" "0.52.6"
-                "03gda7zjx1qh8k9nnlgb7m3w3s1xkysg55hkd1wjch8pqhyv5m94"))
+(define-public rust-windows-i686-msvc-0.53.1
+  (crate-source "windows_i686_msvc" "0.53.1"
+                "1hi6scw3mn2pbdl30ji5i4y8vvspb9b66l98kkz350pig58wfyhy"))
 
-(define-public rust-windows-x86-64-msvc-0.52.6
-  (crate-source "windows_x86_64_msvc" "0.52.6"
-                "1v7rb5cibyzx8vak29pdrk8nx9hycsjs4w0jgms08qk49jl6v7sq"))
+(define-public rust-windows-x86-64-gnu-0.53.1
+  (crate-source "windows_x86_64_gnu" "0.53.1"
+                "16d4yiysmfdlsrghndr97y57gh3kljkwhfdbcs05m1jasz6l4f4w"))
+
+(define-public rust-windows-x86-64-gnullvm-0.53.1
+  (crate-source "windows_x86_64_gnullvm" "0.53.1"
+                "1qbspgv4g3q0vygkg8rnql5c6z3caqv38japiynyivh75ng1gyhg"))
+
+(define-public rust-windows-x86-64-msvc-0.53.1
+  (crate-source "windows_x86_64_msvc" "0.53.1"
+                "0l6npq76vlq4ksn4bwsncpr8508mk0gmznm6wnhjg95d19gzzfyn"))
+
+(define-public rust-wit-bindgen-0.45.1
+  (crate-source "wit-bindgen" "0.45.1"
+                "0dndrimz95nwdv6m24ylj0vj1dvlc012xxrxs13mc1r5y5qk8msw"))
 
 ;; Export list of all sysroot crates for use by xous-sysroot build
 (define-public sysroot-crate-origins
-  (list rust-addr2line-0.25.0
+  (list rust-addr2line-0.25.1
         rust-adler2-2.0.1
         rust-cc-1.2.0
-        rust-cfg-if-1.0.1
-        rust-dlmalloc-0.2.10
+        rust-cfg-if-1.0.4
+        rust-dlmalloc-0.2.11
+        rust-foldhash-0.2.0
         rust-fortanix-sgx-abi-0.6.1
-        rust-getopts-0.2.23
-        rust-gimli-0.32.0
-        rust-hashbrown-0.15.4
+        rust-getopts-0.2.24
+        rust-gimli-0.32.3
+        rust-hashbrown-0.16.1
         rust-hermit-abi-0.5.2
-        rust-libc-0.2.174
-        rust-memchr-2.7.5
+        rust-libc-0.2.177
+        rust-memchr-2.7.6
         rust-miniz-oxide-0.8.9
-        rust-object-0.37.1
+        rust-moto-rt-0.15.2
+        rust-object-0.37.3
         rust-r-efi-5.3.0
         rust-r-efi-alloc-2.1.0
         rust-rand-0.9.2
         rust-rand-core-0.9.3
         rust-rand-xorshift-0.4.0
-        rust-rustc-demangle-0.1.25
+        rust-rustc-demangle-0.1.26
         rust-rustc-literal-escaper-0.0.5
         rust-shlex-1.3.0
-        rust-unicode-width-0.2.1
-        rust-unwinding-0.2.7
-        rust-wasi-0.11.1
-        rust-windows-sys-0.59.0
-        rust-windows-targets-0.52.6
-        rust-windows-aarch64-gnullvm-0.52.6
-        rust-windows-aarch64-msvc-0.52.6
-        rust-windows-i686-gnu-0.52.6
-        rust-windows-i686-gnullvm-0.52.6
-        rust-windows-i686-msvc-0.52.6
-        rust-windows-x86-64-gnu-0.52.6
-        rust-windows-x86-64-gnullvm-0.52.6
-        rust-windows-x86-64-msvc-0.52.6))
+        rust-unwinding-0.2.8
+        rust-vex-sdk-0.27.1
+        rust-wasi-0.11.1+wasi-snapshot-preview1
+        rust-wasi-0.14.4+wasi-0.2.4
+        rust-windows-link-0.2.1
+        rust-windows-sys-0.60.2
+        rust-windows-targets-0.53.5
+        rust-windows-aarch64-gnullvm-0.53.1
+        rust-windows-aarch64-msvc-0.53.1
+        rust-windows-i686-gnu-0.53.1
+        rust-windows-i686-gnullvm-0.53.1
+        rust-windows-i686-msvc-0.53.1
+        rust-windows-x86-64-gnu-0.53.1
+        rust-windows-x86-64-gnullvm-0.53.1
+        rust-windows-x86-64-msvc-0.53.1
+        rust-wit-bindgen-0.45.1))
