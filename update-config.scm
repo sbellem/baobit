@@ -79,27 +79,6 @@
       (lambda (port)
         (put-string port updated)))))
 
-(define %initial-depth 10)
-(define %deepen-step 50)
-(define %max-depth 500)
-
-(define (git-describe-with-deepen)
-  "Try git describe, deepening history until it succeeds or hits the limit."
-  (let loop ((depth %initial-depth))
-    (let ((result (run-command "git describe --long --abbrev=9")))
-      (cond
-       (result result)
-       ((>= depth %max-depth)
-        (format #t "  ~a(git describe failed after deepening to ~a)~a~%"
-                %red depth %reset)
-        #f)
-       (else
-        (let ((new-depth (+ depth %deepen-step)))
-          (format #t "  ~a(deepening history to ~a)~a~%"
-                  %cyan new-depth %reset)
-          (run-git "fetch" "--deepen" (number->string %deepen-step))
-          (loop new-depth)))))))
-
 (define (update-repo! commit url owner upstream-url vars)
   "Clone repo, compute hash and git-describe, update config vars."
   (let ((tmpdir (make-temp-dir))
@@ -109,19 +88,19 @@
       (lambda () #t)
       (lambda ()
         (format #t "~%")
-        (run-git "clone" "--depth" (number->string %initial-depth)
-                 "--tags" url tmpdir)
+        (if need-describe?
+            (run-git "clone" url tmpdir)
+            (run-git "clone" "--depth" "1" url tmpdir))
         (chdir tmpdir)
         ;; Fetch tags from upstream (needed when building from forks)
         (when upstream-url
           (unless (string=? owner "betrusted-io")
             (run-git "remote" "add" "upstream" upstream-url)
             (run-git "fetch" "--tags" "upstream")))
-        (run-git "fetch" "--depth" (number->string %initial-depth)
-                 "origin" commit)
+        (run-git "fetch" "origin" commit)
         (run-git "-c" "advice.detachedHead=false" "checkout" commit)
         (let ((describe (if need-describe?
-                            (git-describe-with-deepen)
+                            (run-command "git describe --long --abbrev=9")
                             #f))
               (hash (run-command "guix hash -rx .")))
           (format #t "~%")

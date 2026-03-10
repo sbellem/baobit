@@ -3,9 +3,6 @@
 ;;; This file is meant to be updated via update-config.scm
 ;;;
 ;;; To update: edit baobit.toml, then run: make update-config
-;;;
-;;; If you see "fatal: No names found, cannot describe anything",
-;;; increase clone-depth in baobit.toml.
 
 (define-module (xous-config)
   #:export (%xous-commit %xous-guix-hash
