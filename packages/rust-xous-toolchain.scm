@@ -370,11 +370,17 @@ targets for Xous development.")
                           (when (file-exists? source)
                             (symlink source target))))
                       '("rustfmt" "cargo-fmt" "clippy-driver" "cargo-clippy"
-                        "rust-analyzer" "rustdoc"))))))
+                        "rust-analyzer" "rustdoc"))
+
+            ;; Create rust-lld symlink (rustc's gnu-lld linker flavor needs this name)
+            (let ((lld (assoc-ref %build-inputs "lld")))
+              (symlink (string-append lld "/bin/ld.lld")
+                       (string-append bin-dir "/rust-lld")))))))
     (inputs `(("rust" ,%rust)
               ("rust:cargo" ,%rust "cargo")
               ("rust-sysroot-merged" ,rust-sysroot-merged)
               ("gcc-toolchain" ,gcc-toolchain)
+              ("lld" ,lld-18)
               ("bash-minimal" ,bash-minimal)))
     ;; Propagate linkers from sysroot packages
     (propagated-inputs
