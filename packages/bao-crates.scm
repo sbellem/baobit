@@ -3324,7 +3324,9 @@
 (define-cargo-inputs lookup-cargo-inputs
                      (bao1x-boot0 => %bao-crate-inputs)
                      (bao1x-boot1 => %bao-crate-inputs)
+                     (bao1x-boot1-lite => %bao-crate-inputs)
                      (bao1x-alt-boot1 => %bao-crate-inputs)
+                     (bao1x-alt-boot1-lite => %bao-crate-inputs)
                      (bao1x-baremetal-dabao => %bao-crate-inputs)
                      (dabao => %bao-crate-inputs)
                      (dabao-helloworld => %bao-crate-inputs)
