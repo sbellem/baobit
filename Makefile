@@ -58,8 +58,8 @@ endif
 
 .PHONY: help rust-1.91 rust-1.92 rust-1.93 \
         rv32imac-none rv32imac-xous toolchain \
-        boot0 boot1 alt-boot1 bootloader manifest baremetal-dabao dabao dabao-helloworld baosec \
-        rustfilt boot0-elf-analysis boot1-elf-analysis alt-boot1-elf-analysis baremetal-dabao-elf-analysis dabao-elf-analysis baosec-elf-analysis \
+        boot0 boot1 boot1-lite alt-boot1 alt-boot1-lite bootloader manifest baremetal-dabao dabao dabao-helloworld baosec \
+        rustfilt boot0-elf-analysis boot1-elf-analysis boot1-lite-elf-analysis alt-boot1-elf-analysis alt-boot1-lite-elf-analysis baremetal-dabao-elf-analysis dabao-elf-analysis baosec-elf-analysis \
         all-dry dry-toolchain update-config update-sysroot-crates
 
 help:
@@ -125,8 +125,14 @@ boot0:
 boot1:
 	$(TM) -e '(@ (bao) bao1x-boot1)'
 
+boot1-lite:
+	$(TM) -e '(@ (bao) bao1x-boot1-lite)'
+
 alt-boot1:
 	$(TM) -e '(@ (bao) bao1x-alt-boot1)'
+
+alt-boot1-lite:
+	$(TM) -e '(@ (bao) bao1x-alt-boot1-lite)'
 
 bootloader: boot0 boot1 alt-boot1
 
@@ -155,8 +161,14 @@ boot0-elf-analysis:
 boot1-elf-analysis:
 	$(TM) -e '((@ (tools) elf-analyzer) (@ (bao) bao1x-boot1))'
 
+boot1-lite-elf-analysis:
+	$(TM) -e '((@ (tools) elf-analyzer) (@ (bao) bao1x-boot1-lite))'
+
 alt-boot1-elf-analysis:
 	$(TM) -e '((@ (tools) elf-analyzer) (@ (bao) bao1x-alt-boot1))'
+
+alt-boot1-lite-elf-analysis:
+	$(TM) -e '((@ (tools) elf-analyzer) (@ (bao) bao1x-alt-boot1-lite))'
 
 baremetal-dabao-elf-analysis:
 	$(TM) -e '((@ (tools) elf-analyzer) (@ (bao) bao1x-baremetal-dabao))'
