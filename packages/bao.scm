@@ -39,7 +39,9 @@
 
 (define %elf-binary-names
   '(("bao1x-boot0" . "bao1x-boot0") ("bao1x-boot1" . "bao1x-boot1")
+    ("bao1x-boot1-lite" . "bao1x-boot1")
     ("bao1x-alt-boot1" . "bao1x-boot1")
+    ("bao1x-alt-boot1-lite" . "bao1x-boot1")
     ("bao1x-baremetal-dabao" . "bao1x-baremetal-dabao")
     ("dabao" . "dabao")
     ("baosec" . "baosec")))
@@ -505,11 +507,23 @@
                        #:target-dir "riscv32imac-unknown-none-elf"
                        #:crate-inputs (lookup-cargo-inputs 'bao1x-boot1)))
 
+(define-public bao1x-boot1-lite
+  (make-firmware-build "bao1x-boot1-lite"
+                       "bao1x-boot1-lite"
+                       #:target-dir "riscv32imac-unknown-none-elf"
+                       #:crate-inputs (lookup-cargo-inputs 'bao1x-boot1-lite)))
+
 (define-public bao1x-alt-boot1
   (make-firmware-build "bao1x-alt-boot1"
                        "bao1x-alt-boot1"
                        #:target-dir "riscv32imac-unknown-none-elf"
                        #:crate-inputs (lookup-cargo-inputs 'bao1x-alt-boot1)))
+
+(define-public bao1x-alt-boot1-lite
+  (make-firmware-build "bao1x-alt-boot1-lite"
+                       "bao1x-alt-boot1-lite"
+                       #:target-dir "riscv32imac-unknown-none-elf"
+                       #:crate-inputs (lookup-cargo-inputs 'bao1x-alt-boot1-lite)))
 
 (define-public bao1x-baremetal-dabao
   (make-firmware-build "bao1x-baremetal-dabao"
