@@ -4,4 +4,6 @@
 (authorizations
  (version 0)
  (("E39D 2B3D 0564 BA43 7BD9  2756 C38A E0EC CAB7 D5C8"
-   (name "gluonix"))))
+   (name "gluonix"))
+  ("3910 0238 EC05 7FA3 004D  E1E3 FFFC DA07 1F17 3804"
+   (name "photonix"))))
