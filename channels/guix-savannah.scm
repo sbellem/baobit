@@ -5,7 +5,7 @@
         (name 'guix)
         (url "https://git.savannah.gnu.org/git/guix.git")
         (branch "master")
-        (commit "fb78838c613212a5d202f45d7ef27e953aea77b4")
+        (commit "b5e047ff9b400585cff590b7ee2f1629b24f6148")
         (introduction
          (make-channel-introduction "9edb3f66fd807b096b48283debdcddccfea34bad"
           (openpgp-fingerprint
