@@ -20,7 +20,7 @@
   #:use-module (gnu packages version-control)
   #:use-module (srfi srfi-1)
   #:use-module (rust-xous-toolchain)
-  #:use-module (bao-crates)
+  #:use-module (bao-crates-new)
   #:use-module (xous-config))
 
 ;;; =============================================================
@@ -497,43 +497,43 @@
   (make-firmware-build "bao1x-boot0"
                        "bao1x-boot0"
                        #:target-dir "riscv32imac-unknown-none-elf"
-                       #:crate-inputs (lookup-cargo-inputs 'bao1x-boot0)))
+                       #:crate-inputs %bao-cargo-inputs))
 
 (define-public bao1x-boot1
   (make-firmware-build "bao1x-boot1"
                        "bao1x-boot1"
                        #:target-dir "riscv32imac-unknown-none-elf"
-                       #:crate-inputs (lookup-cargo-inputs 'bao1x-boot1)))
+                       #:crate-inputs %bao-cargo-inputs))
 
 (define-public bao1x-alt-boot1
   (make-firmware-build "bao1x-alt-boot1"
                        "bao1x-alt-boot1"
                        #:target-dir "riscv32imac-unknown-none-elf"
-                       #:crate-inputs (lookup-cargo-inputs 'bao1x-alt-boot1)))
+                       #:crate-inputs %bao-cargo-inputs))
 
 (define-public bao1x-baremetal-dabao
   (make-firmware-build "bao1x-baremetal-dabao"
                        "bao1x-baremetal-dabao"
                        #:target-dir "riscv32imac-unknown-none-elf"
-                       #:crate-inputs (lookup-cargo-inputs 'bao1x-baremetal-dabao)))
+                       #:crate-inputs %bao-cargo-inputs))
 
 (define-public dabao
   (make-firmware-build "dabao"
                        "dabao"
                        #:target-dir "riscv32imac-unknown-xous-elf"
-                       #:crate-inputs (lookup-cargo-inputs 'dabao)))
+                       #:crate-inputs %bao-cargo-inputs))
 
 (define-public dabao-helloworld
   (make-firmware-build "dabao-helloworld"
                        "dabao helloworld"
                        #:target-dir "riscv32imac-unknown-xous-elf"
-                       #:crate-inputs (lookup-cargo-inputs 'dabao-helloworld)))
+                       #:crate-inputs %bao-cargo-inputs))
 
 (define-public baosec
   (make-firmware-build "baosec"
                        "baosec"
                        #:target-dir "riscv32imac-unknown-xous-elf"
-                       #:crate-inputs (lookup-cargo-inputs 'baosec)))
+                       #:crate-inputs %bao-cargo-inputs))
 
 ;;; Combined bootloader package
 (define-public bao1x-bootloader

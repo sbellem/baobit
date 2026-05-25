@@ -1,0 +1,53 @@
+;;; Baochip crate sources.
+;;;
+;;; This file is managed by 'guix import'.  Do NOT add definitions manually.
+;;;
+;;; Workflow:
+;;;   1. Copy this template:
+;;;        cp scripts/bao-crates.tmpl packages/bao-crates-new.scm
+;;;   2. Run `guix import -i packages/bao-crates-new.scm crate --lockfile=...`
+;;;      once per xous-core Cargo.lock — typically:
+;;;        - xous-core/Cargo.lock           with key  xous-core
+;;;        - xous-core/locales/Cargo.lock   with key  locales
+;;;   3. Run scripts/post-process-bao-crates.sh to inject (snippet ...) into
+;;;      the 3 git origins that need it, append friendly-name aliases for
+;;;      bao.scm, and append %bao-cargo-inputs (the merged input list).
+
+(define-module (bao-crates-new)
+  #:use-module (guix gexp)
+  #:use-module (guix packages)
+  #:use-module (guix download)
+  #:use-module (guix git-download)
+  #:use-module (guix build-system cargo)
+  #:use-module (bao-git-snippets)
+  #:export (lookup-cargo-inputs
+            %bao-cargo-inputs
+            rust-armv7-git
+            rust-atsama5d27-git
+            rust-com-rs-git
+            rust-curve25519-dalek-git
+            rust-engine-25519-git
+            rust-engine25519-as-git
+            rust-ring-xous-git
+            rust-rqrr-git
+            rust-sha2-xous-git
+            rust-simple-fatfs-git
+            rust-usb-device-git
+            rust-usbd-serial-git
+            rust-xous-usb-hid-git))
+
+;;;
+;;; Rust libraries fetched from crates.io and from git sources
+;;; referenced by xous-core's Cargo.lock files.
+;;;
+
+(define qqqq-separator 'begin-of-crates)
+
+(define ssss-separator 'end-of-crates)
+
+
+;;;
+;;; Cargo inputs.
+;;;
+
+(define-cargo-inputs lookup-cargo-inputs)
