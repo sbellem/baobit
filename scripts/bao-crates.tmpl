@@ -10,8 +10,9 @@
 ;;;        - xous-core/Cargo.lock           with key  xous-core
 ;;;        - xous-core/locales/Cargo.lock   with key  locales
 ;;;   3. Run scripts/post-process-bao-crates.sh to inject (snippet ...) into
-;;;      the 3 git origins that need it, append friendly-name aliases for
-;;;      bao.scm, and append %bao-cargo-inputs (the merged input list).
+;;;      the 3 git origins that need it and append friendly-name aliases for
+;;;      bao.scm.  The (bao-cargo-inputs) thunk below is already in this
+;;;      template — no need to regenerate it.
 
 (define-module (bao-crates-new)
   #:use-module (guix gexp)
@@ -21,7 +22,7 @@
   #:use-module (guix build-system cargo)
   #:use-module (bao-git-snippets)
   #:export (lookup-cargo-inputs
-            %bao-cargo-inputs
+            bao-cargo-inputs
             rust-armv7-git
             rust-atsama5d27-git
             rust-com-rs-git
@@ -51,3 +52,22 @@
 ;;;
 
 (define-cargo-inputs lookup-cargo-inputs)
+
+
+;;;
+;;; Combined input list for the firmware xtask targets — the crates.io
+;;; subset of both xous-core lockfiles.  Defined as a thunk so the body
+;;; isn't evaluated at module-load time (the importer puts
+;;; lookup-cargo-inputs further down the file).
+;;;
+;;; Git origins are FILTERED OUT here: bao.scm passes them through a
+;;; separate `setup-git-deps' phase wired up via %git-dependencies, and
+;;; `setup-vendor' would otherwise try to `tar xzf' a directory.
+;;;
+
+(define bao-cargo-inputs
+  (lambda ()
+    (filter (lambda (o)
+              (not (git-reference? (origin-uri o))))
+            (append (lookup-cargo-inputs 'xous-core)
+                    (lookup-cargo-inputs 'locales)))))

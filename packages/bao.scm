@@ -497,43 +497,43 @@
   (make-firmware-build "bao1x-boot0"
                        "bao1x-boot0"
                        #:target-dir "riscv32imac-unknown-none-elf"
-                       #:crate-inputs %bao-cargo-inputs))
+                       #:crate-inputs (bao-cargo-inputs)))
 
 (define-public bao1x-boot1
   (make-firmware-build "bao1x-boot1"
                        "bao1x-boot1"
                        #:target-dir "riscv32imac-unknown-none-elf"
-                       #:crate-inputs %bao-cargo-inputs))
+                       #:crate-inputs (bao-cargo-inputs)))
 
 (define-public bao1x-alt-boot1
   (make-firmware-build "bao1x-alt-boot1"
                        "bao1x-alt-boot1"
                        #:target-dir "riscv32imac-unknown-none-elf"
-                       #:crate-inputs %bao-cargo-inputs))
+                       #:crate-inputs (bao-cargo-inputs)))
 
 (define-public bao1x-baremetal-dabao
   (make-firmware-build "bao1x-baremetal-dabao"
                        "bao1x-baremetal-dabao"
                        #:target-dir "riscv32imac-unknown-none-elf"
-                       #:crate-inputs %bao-cargo-inputs))
+                       #:crate-inputs (bao-cargo-inputs)))
 
 (define-public dabao
   (make-firmware-build "dabao"
                        "dabao"
                        #:target-dir "riscv32imac-unknown-xous-elf"
-                       #:crate-inputs %bao-cargo-inputs))
+                       #:crate-inputs (bao-cargo-inputs)))
 
 (define-public dabao-helloworld
   (make-firmware-build "dabao-helloworld"
                        "dabao helloworld"
                        #:target-dir "riscv32imac-unknown-xous-elf"
-                       #:crate-inputs %bao-cargo-inputs))
+                       #:crate-inputs (bao-cargo-inputs)))
 
 (define-public baosec
   (make-firmware-build "baosec"
                        "baosec"
                        #:target-dir "riscv32imac-unknown-xous-elf"
-                       #:crate-inputs %bao-cargo-inputs))
+                       #:crate-inputs (bao-cargo-inputs)))
 
 ;;; Combined bootloader package
 (define-public bao1x-bootloader
