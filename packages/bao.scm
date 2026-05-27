@@ -20,7 +20,7 @@
   #:use-module (gnu packages version-control)
   #:use-module (srfi srfi-1)
   #:use-module (rust-xous-toolchain)
-  #:use-module (bao-crates-new)
+  #:use-module (bao-crates)
   #:use-module (xous-config))
 
 ;;; =============================================================

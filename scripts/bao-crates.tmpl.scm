@@ -4,8 +4,8 @@
 ;;;
 ;;; Workflow:
 ;;;   1. Copy this template:
-;;;        cp scripts/bao-crates.tmpl packages/bao-crates-new.scm
-;;;   2. Run `guix import -i packages/bao-crates-new.scm crate --lockfile=...`
+;;;        cp scripts/bao-crates.tmpl.scm packages/bao-crates.scm
+;;;   2. Run `guix import -i packages/bao-crates.scm crate --lockfile=...`
 ;;;      once per xous-core Cargo.lock — typically:
 ;;;        - xous-core/Cargo.lock           with key  xous-core
 ;;;        - xous-core/locales/Cargo.lock   with key  locales
@@ -14,12 +14,12 @@
 ;;;      bao.scm.  The (bao-cargo-inputs) thunk below is already in this
 ;;;      template — no need to regenerate it.
 
-(define-module (bao-crates-new)
+(define-module (bao-crates)
   #:use-module (guix gexp)
   #:use-module (guix packages)
   #:use-module (guix download)
   #:use-module (guix git-download)
-  #:use-module (guix build-system cargo)
+  #:use-module ((guix build-system cargo) #:hide (crate-source))   ;TODO: drop #:hide once we accept upstream's name normalisation
   #:use-module (bao-git-snippets)
   #:export (lookup-cargo-inputs
             bao-cargo-inputs
@@ -36,6 +36,27 @@
             rust-usb-device-git
             rust-usbd-serial-git
             rust-xous-usb-hid-git))
+
+;;; ---------------------------------------------------------------------------
+;;; TODO: REMOVE — bit-identity shim, to be deleted once the refactor is settled.
+;;;
+;;; Local `crate-source` that preserves underscores in cargo crate names
+;;; (e.g. `rand_core`) instead of letting upstream's helper from
+;;; `(guix build-system cargo)` normalise them to hyphens (`rand-core`).
+;;; This affects origin file-names → vendor-dir basenames → the embedded
+;;; "/build/vendor/HASH-rust-rand_core-0.6.4/src/block.rs"-style strings
+;;; that rustc bakes into the binary.  Keeping it makes refactor builds
+;;; bit-identical to the pre-refactor (hand-curated) baseline, useful as
+;;; a regression oracle.  Long-term we want to follow upstream's
+;;; convention — drop this `define` and the `#:hide (crate-source)` in
+;;; the module header above once we accept the cosmetic path-string diff.
+;;; ---------------------------------------------------------------------------
+(define (crate-source name version hash)
+  (origin
+    (method url-fetch)
+    (uri (crate-uri name version))
+    (file-name (string-append "rust-" name "-" version ".tar.gz"))
+    (sha256 (base32 hash))))
 
 ;;;
 ;;; Rust libraries fetched from crates.io and from git sources

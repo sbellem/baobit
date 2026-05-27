@@ -26,11 +26,11 @@
 #   (snippet bao-NAME-snippet)))   (snippet field + close origin + define)
 #
 # Usage:  scripts/inject-snippets.sh [FILE]
-#         FILE defaults to packages/bao-crates-new.scm.
+#         FILE defaults to packages/bao-crates.scm.
 
 set -euo pipefail
 
-OUT="${1:-packages/bao-crates-new.scm}"
+OUT="${1:-packages/bao-crates.scm}"
 
 if [ ! -f "$OUT" ]; then
   echo "error: input file not found: $OUT" >&2
