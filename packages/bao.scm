@@ -77,20 +77,25 @@
 ;;; via relative-path deps WITHIN the primary crate's vendored checkout.
 
 (define %git-deps
-  ;; (url-substring vendor-prefix subpath)
-  '(("Foundation-Devices/armv7"           "armv7"            "")
-    ("Foundation-Devices/atsama5d27"      "atsama5d27"       "")
-    ("betrusted-io/com_rs"                "com-rs"           "")
-    ("betrusted-io/curve25519-dalek"      "curve25519-dalek" "curve25519-dalek")
-    ("betrusted-io/xous-engine-25519"     "engine-25519"     "")
-    ("betrusted-io/engine25519-as"        "engine25519-as"   "")
-    ("betrusted-io/ring-xous"             "ring"             "")
-    ("betrusted-io/rqrr"                  "rqrr"             "")
-    ("betrusted-io/hashes"                "sha2"             "sha2")
-    ("betrusted-io/simple-fatfs"          "simple-fatfs"     "")
-    ("betrusted-io/usb-device"            "usb-device"       "")
-    ("betrusted-io/usbd-serial"           "usbd-serial"      "")
-    ("betrusted-io/xous-usb-hid"          "xous-usb-hid"     "")))
+  ;; (url-substring vendor-prefix subpath v1-name)
+  ;; v1-name is the hand-curated dir name from the previous gnu-build-system
+  ;; bao.scm (e.g. "git-armv7").  Used by restructure-vendor-for-v1-paths to
+  ;; reproduce the exact path strings rustc embeds for bit-identity with the
+  ;; baseline.  TODO REMOVE: once bit-identity check is satisfied, drop the
+  ;; v1-name column and the restructure phase.
+  '(("Foundation-Devices/armv7"           "armv7"            ""                       "git-armv7")
+    ("Foundation-Devices/atsama5d27"      "atsama5d27"       ""                       "git-atsama5d27")
+    ("betrusted-io/com_rs"                "com-rs"           ""                       "git-com-rs")
+    ("betrusted-io/curve25519-dalek"      "curve25519-dalek" "curve25519-dalek"       "git-curve25519-dalek")
+    ("betrusted-io/xous-engine-25519"     "engine-25519"     ""                       "git-engine-25519")
+    ("betrusted-io/engine25519-as"        "engine25519-as"   ""                       "git-engine25519-as")
+    ("betrusted-io/ring-xous"             "ring"             ""                       "git-ring-xous")
+    ("betrusted-io/rqrr"                  "rqrr"             ""                       "git-rqrr")
+    ("betrusted-io/hashes"                "sha2"             "sha2"                   "git-sha2-xous")
+    ("betrusted-io/simple-fatfs"          "simple-fatfs"     ""                       "git-simple-fatfs")
+    ("betrusted-io/usb-device"            "usb-device"       ""                       "git-usb-device")
+    ("betrusted-io/usbd-serial"           "usbd-serial"      ""                       "git-usbd-serial")
+    ("betrusted-io/xous-usb-hid"          "xous-usb-hid"     ""                       "git-xous-usb-hid")))
 
 ;;; =============================================================
 ;;; Helper to create firmware build packages
@@ -135,7 +140,11 @@
                        (line (read-line port)))
                   (close-pipe port)
                   (car (string-split line #\space))))
-              (let ((vendor (string-append (getcwd) "/guix-vendor")))
+              (let ((vendor     (string-append (getcwd) "/vendor"))
+                    (git-vendor (string-append (getcwd) "/git-vendor")))
+                ;; Tarballs: vendor dirs were renamed by
+                ;; restructure-vendor-for-v1-paths to <v1-name> matching v1's
+                ;; setup-vendor scheme (substring(basename(path), 5, len-7)).
                 (for-each
                  (lambda (input)
                    (let ((name (car input))
@@ -143,8 +152,10 @@
                      (when (and (string-prefix? "rust-" name)
                                 (string-suffix? ".tar.gz" path)
                                 (file-exists? path))
-                       (let* ((basepath (strip-store-file-name path))
-                              (crate-dir (string-append vendor "/" basepath))
+                       (let* ((fn (basename path))
+                              (v1n (substring fn 5
+                                              (- (string-length fn) 7)))
+                              (crate-dir (string-append vendor "/" v1n))
                               (stub (string-append crate-dir
                                                    "/.cargo-checksum.json")))
                          (when (file-exists? crate-dir)
@@ -154,19 +165,18 @@
                                        "{\"files\":{},\"package\":\"~a\"}"
                                        (tarball-sha256 path)))))))))
                  inputs)
-                ;; Git checkouts (no "package" field in lockfile): stub
-                ;; without package field.
+                ;; Git checkouts: stub without "package" field.
                 (for-each
                  (lambda (entry)
-                   (let* ((dir (string-append vendor "/" entry))
+                   (let* ((dir (string-append git-vendor "/" entry))
                           (stub (string-append dir "/.cargo-checksum.json")))
-                     (when (and (string-suffix? "-checkout" entry)
+                     (when (and (not (member entry '("." "..")))
                                 (file-exists? dir)
                                 (not (file-exists? stub)))
                        (call-with-output-file stub
                          (lambda (port)
                            (display "{\"files\":{}}" port))))))
-                 (or (scandir vendor) '())))))
+                 (or (scandir git-vendor) '())))))
 
           ;; Upstream's unpack-rust-crates uses crate-src? to filter inputs,
           ;; which requires each git checkout's root Cargo.toml to contain a
@@ -306,6 +316,102 @@
                            (delete-file cargo-toml)))))))
                  entries))))
 
+          ;; TODO REMOVE — bit-identity shim.  Rename vendor entries to match
+          ;; the v1 gnu-build-system layout so rustc-embedded paths (panic /
+          ;; debug locations) match the baseline byte-for-byte.
+          ;;   tarball:  guix-vendor/rust-NAME-VERSION.tar.gz
+          ;;           → vendor/<partial-hash>-rust-NAME-VERSION
+          ;;     (partial hash = substring(basename(input-path), 5, len-7),
+          ;;      mirroring v1's setup-vendor crate-name computation)
+          ;;   git:      guix-vendor/rust-NAME-VERSION-checkout (primary)
+          ;;           → git-vendor/<v1-name>  (column 4 of %git-deps)
+          ;;   redundant -checkout entries (multi-crate duplicates like
+          ;;   utralib, curve25519-dalek-derive, sha2-tarball-via-git) get
+          ;;   deleted: the primary checkout already contains them as subdirs.
+          (add-after 'strip-vendor-workspaces 'restructure-vendor-for-v1-paths
+            (lambda* (#:key inputs #:allow-other-keys)
+              (let ((guix-vendor (string-append (getcwd) "/guix-vendor"))
+                    (vendor      (string-append (getcwd) "/vendor"))
+                    (git-vendor  (string-append (getcwd) "/git-vendor")))
+                (mkdir-p vendor)
+                (mkdir-p git-vendor)
+                ;; 1. Tarball inputs → vendor/<v1-name>.
+                (for-each
+                 (lambda (input)
+                   (let ((name (car input))
+                         (path (cdr input)))
+                     (when (and (string-prefix? "rust-" name)
+                                (string-suffix? ".tar.gz" path))
+                       (let* ((fn (basename path))
+                              ;; v1's setup-vendor uses
+                              ;; (substring fn 5 (- (string-length fn) 7))
+                              ;; on the same input path's basename — strips
+                              ;; first 5 chars of the store hash and the
+                              ;; ".tar.gz" tail.  Reproduce that exactly.
+                              (v1n (substring fn 5
+                                              (- (string-length fn) 7)))
+                              ;; unpack-rust-crates puts the vendor entry at
+                              ;; guix-vendor/<strip-store-file-name path>
+                              ;; = guix-vendor/rust-NAME-VERSION.tar.gz.
+                              (src (string-append guix-vendor "/"
+                                                  (strip-store-file-name path)))
+                              (dst (string-append vendor "/" v1n)))
+                         (when (and (file-exists? src)
+                                    (not (file-exists? dst)))
+                           (rename-file src dst))))))
+                 inputs)
+                ;; 2. Primary git checkouts → git-vendor/<v1-name>.
+                (for-each
+                 (lambda (entry)
+                   (let* ((vendor-prefix (cadr entry))
+                          (v1-name       (cadddr entry))
+                          (matches
+                           (filter
+                            (lambda (e)
+                              (and (string-prefix?
+                                    (string-append "rust-" vendor-prefix "-")
+                                    e)
+                                   (string-suffix? "-checkout" e)
+                                   ;; Exclude subname-prefix collisions: e.g.
+                                   ;; for vendor-prefix "curve25519-dalek" we
+                                   ;; must NOT pick rust-curve25519-dalek-
+                                   ;; derive-.  Require the next char after
+                                   ;; the prefix to be a digit (version).
+                                   (let* ((p (string-append "rust-"
+                                                            vendor-prefix
+                                                            "-"))
+                                          (i (string-length p)))
+                                     (and (> (string-length e) i)
+                                          (char-numeric?
+                                           (string-ref e i))))))
+                            (or (scandir guix-vendor) '()))))
+                     (when (pair? matches)
+                       (let ((primary (car matches)))
+                         (rename-file
+                          (string-append guix-vendor "/" primary)
+                          (string-append git-vendor "/" v1-name))))))
+                 '#$%git-deps)
+                ;; 3. Drop remaining -checkout entries (multi-crate dupes).
+                (for-each
+                 (lambda (e)
+                   (let ((p (string-append guix-vendor "/" e)))
+                     (when (and (string-suffix? "-checkout" e)
+                                (file-exists? p))
+                       (delete-file-recursively p))))
+                 (or (scandir guix-vendor) '()))
+                ;; 4. Rename the cargo-vendor root from guix-vendor to vendor:
+                ;; the leftover tarballs already moved (step 1), so we just
+                ;; move the rest into vendor/ for cargo to see.
+                (for-each
+                 (lambda (e)
+                   (let ((src (string-append guix-vendor "/" e))
+                         (dst (string-append vendor "/" e)))
+                     (when (and (not (member e '("." "..")))
+                                (file-exists? src)
+                                (not (file-exists? dst)))
+                       (rename-file src dst))))
+                 (or (scandir guix-vendor) '())))))
+
           ;; cargo-build-system's configure deletes Cargo.lock; we want to
           ;; preserve xous-core's lockfile pinning, so replace configure
           ;; entirely.
@@ -314,7 +420,7 @@
               (let* ((rust-xous   (assoc-ref inputs "rust-xous-toolchain"))
                      (riscv-ld    (search-input-file inputs "/bin/riscv32-none-elf-ld"))
                      (ld-lld      (search-input-file inputs "/bin/ld.lld"))
-                     (vendor-dir  (string-append (getcwd) "/guix-vendor"))
+                     (vendor-dir  (string-append (getcwd) "/vendor"))
                      (vendor-config
                       (string-append "[source.crates-io]\n"
                                      "replace-with = \"vendored-sources\"\n\n"
@@ -359,23 +465,13 @@
               (use-modules (ice-9 textual-ports)
                            (ice-9 regex)
                            (ice-9 ftw))
-              (let* ((vendor (string-append (getcwd) "/guix-vendor"))
-                     (vendor-entries (or (scandir vendor) '()))
+              (let* ((git-vendor (string-append (getcwd) "/git-vendor"))
                      (resolve
-                      (lambda (prefix subpath)
-                        (let* ((re (make-regexp
-                                    (string-append "^rust-" (regexp-quote prefix)
-                                                   "-[0-9].*-checkout$")))
-                               (matches (filter (lambda (e) (regexp-exec re e))
-                                                vendor-entries)))
-                          (when (null? matches)
-                            (error "no vendor dir for prefix" prefix))
-                          (unless (= 1 (length matches))
-                            (error "ambiguous vendor dir for prefix" prefix matches))
-                          (let ((base (string-append vendor "/" (car matches))))
-                            (if (string=? subpath "")
-                                base
-                                (string-append base "/" subpath)))))))
+                      (lambda (v1-name subpath)
+                        (let ((base (string-append git-vendor "/" v1-name)))
+                          (if (string=? subpath "")
+                              base
+                              (string-append base "/" subpath))))))
                 (for-each
                  (lambda (cargo-toml)
                    (let ((content (call-with-input-file cargo-toml get-string-all)))
@@ -395,9 +491,9 @@
                              (for-each
                               (lambda (entry)
                                 (let* ((url-substr (car entry))
-                                       (prefix    (cadr entry))
                                        (subpath   (caddr entry))
-                                       (path      (resolve prefix subpath))
+                                       (v1-name   (cadddr entry))
+                                       (path      (resolve v1-name subpath))
                                        (replacement
                                         (string-append "path = \"" path "\"")))
                                   (set! modified
