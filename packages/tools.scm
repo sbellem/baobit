@@ -21,7 +21,14 @@
   #:use-module (gnu packages base)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages rust)
+  #:use-module (xous-config)
   #:export (rustfilt riscv32-none-elf-binutils elf-analyzer))
+
+;; Resolve %rust-version string to actual rust package, like the other
+;; modules — avoids hardcoding a Rust version that may be dropped upstream.
+(define %rust
+  (module-ref (resolve-module '(gnu packages rust))
+              (string->symbol (string-append "rust-" %rust-version))))
 
 ;;; =============================================================
 ;;; CRATE SOURCES (generated via guix import crate -f Cargo.lock)
@@ -175,8 +182,8 @@
               (let ((bin (string-append (assoc-ref outputs "out") "/bin")))
                 (mkdir-p bin)
                 (install-file "target/release/rustfilt" bin)))))))
-    (native-inputs `(("rust" ,rust-1.90)
-                     ("rust:cargo" ,rust-1.90 "cargo")
+    (native-inputs `(("rust" ,%rust)
+                     ("rust:cargo" ,%rust "cargo")
                      ("tar" ,tar)
                      ("gzip" ,gzip)
                      ("coreutils" ,coreutils)
