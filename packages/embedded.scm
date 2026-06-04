@@ -1,20 +1,4 @@
-;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2024 Baochan contributors
-;;;
-;;; This file is part of GNU Guix.
-;;;
-;;; GNU Guix is free software; you can redistribute it and/or modify it
-;;; under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 3 of the License, or (at
-;;; your option) any later version.
-;;;
-;;; GNU Guix is distributed in the hope that it will be useful, but
-;;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
-;;;
-;;; You should have received a copy of the GNU General Public License
-;;; along with GNU Guix.  If not, see <http://www.gnu.org/licenses/>.
+;;; Bare-metal Rust sysroots for embedded development
 
 (define-module (embedded)
   #:use-module (gnu packages rust)
@@ -76,8 +60,7 @@
                                 "\"\n"
                                 "vendor = true\n"
                                 "submodules = false\n"
-                                "target = [\"riscv32imac-unknown-none-elf\"]
-"
+                                "target = [\"riscv32imac-unknown-none-elf\"]\n"
                                 "[install]\n"
                                 "prefix = \""
                                 out
