@@ -135,7 +135,8 @@
                        (line (read-line port)))
                   (close-pipe port)
                   (car (string-split line #\space))))
-              (let ((vendor (string-append (getcwd) "/guix-vendor")))
+              (let ((vendor     (string-append (getcwd) "/guix-vendor"))
+                    (git-vendor (string-append (getcwd) "/git-vendor")))
                 (for-each
                  (lambda (input)
                    (let ((name (car input))
@@ -154,11 +155,14 @@
                                        "{\"files\":{},\"package\":\"~a\"}"
                                        (tarball-sha256 path)))))))))
                  inputs)
-                ;; Git checkouts (no "package" field in lockfile): stub
-                ;; without package field.
+                ;; Git checkouts live in git-vendor/ (moved there by
+                ;; move-git-checkouts so they don't shadow same-named
+                ;; crates.io tarballs in the cargo directory source).  They
+                ;; are consumed as path deps, which don't strictly need a
+                ;; checksum file, but the stub keeps the tree uniform.
                 (for-each
                  (lambda (entry)
-                   (let* ((dir (string-append vendor "/" entry))
+                   (let* ((dir (string-append git-vendor "/" entry))
                           (stub (string-append dir "/.cargo-checksum.json")))
                      (when (and (string-suffix? "-checkout" entry)
                                 (file-exists? dir)
@@ -166,7 +170,7 @@
                        (call-with-output-file stub
                          (lambda (port)
                            (display "{\"files\":{}}" port))))))
-                 (or (scandir vendor) '())))))
+                 (or (scandir git-vendor) '())))))
 
           ;; Upstream's unpack-rust-crates uses crate-src? to filter inputs,
           ;; which requires each git checkout's root Cargo.toml to contain a
@@ -306,6 +310,35 @@
                            (delete-file cargo-toml)))))))
                  entries))))
 
+          ;; Move every git checkout out of guix-vendor/ (the cargo directory
+          ;; source) into a sibling git-vendor/.  Git-forked crates are
+          ;; consumed via git=→path= rewrites (patch-cargo-git-deps), so they
+          ;; never need to be served by the directory source.  Leaving them in
+          ;; guix-vendor is actively harmful: a checkout and a crates.io
+          ;; tarball can declare the SAME package-id (e.g. usbd-serial 0.1.1,
+          ;; pulled both as the betrusted git fork by usb-bao1x and from
+          ;; crates.io by usb-device-xous).  The directory source then indexes
+          ;; both under one id and non-deterministically serves the checkout
+          ;; (a {"files":{}} stub with no "package" field) for the registry
+          ;; consumer, which fails with "checksum ... could not be calculated,
+          ;; but a checksum is listed in the existing lock file".  Keeping
+          ;; checkouts in a separate tree leaves the directory source holding
+          ;; only crates.io tarballs, one per id.
+          (add-after 'strip-vendor-workspaces 'move-git-checkouts
+            (lambda _
+              (let ((vendor     (string-append (getcwd) "/guix-vendor"))
+                    (git-vendor (string-append (getcwd) "/git-vendor")))
+                (mkdir-p git-vendor)
+                (for-each
+                 (lambda (entry)
+                   (when (string-suffix? "-checkout" entry)
+                     (let ((src (string-append vendor "/" entry))
+                           (dst (string-append git-vendor "/" entry)))
+                       (when (and (file-exists? src)
+                                  (not (file-exists? dst)))
+                         (rename-file src dst)))))
+                 (or (scandir vendor) '())))))
+
           ;; cargo-build-system's configure deletes Cargo.lock; we want to
           ;; preserve xous-core's lockfile pinning, so replace configure
           ;; entirely.
@@ -351,16 +384,16 @@
                     (display vendor-config port))))))
 
           ;; Rewrite every `git = "..."` reference in Cargo.toml files to
-          ;; `path = "<guix-vendor>/rust-NAME-VERSION-checkout[/subpath]"`,
+          ;; `path = "<git-vendor>/rust-NAME-VERSION-checkout[/subpath]"`,
           ;; and strip trailing branch=/rev= qualifiers.  Runs after
-          ;; unpack-rust-crates so guix-vendor/ exists.
+          ;; move-git-checkouts so git-vendor/ holds the checkouts.
           (add-after 'configure 'patch-cargo-git-deps
             (lambda _
               (use-modules (ice-9 textual-ports)
                            (ice-9 regex)
                            (ice-9 ftw))
-              (let* ((vendor (string-append (getcwd) "/guix-vendor"))
-                     (vendor-entries (or (scandir vendor) '()))
+              (let* ((git-vendor (string-append (getcwd) "/git-vendor"))
+                     (vendor-entries (or (scandir git-vendor) '()))
                      (resolve
                       (lambda (prefix subpath)
                         (let* ((re (make-regexp
@@ -372,7 +405,7 @@
                             (error "no vendor dir for prefix" prefix))
                           (unless (= 1 (length matches))
                             (error "ambiguous vendor dir for prefix" prefix matches))
-                          (let ((base (string-append vendor "/" (car matches))))
+                          (let ((base (string-append git-vendor "/" (car matches))))
                             (if (string=? subpath "")
                                 base
                                 (string-append base "/" subpath)))))))
