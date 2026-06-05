@@ -370,7 +370,34 @@
                           (find-files "." "^Cargo\\.toml$")))))
 
           ;; Phase 4: Set up cargo config
-          (add-after 'patch-cargo-toml-git-deps 'setup-cargo
+          ;; Some upstream lockfiles contain both crates.io and git entries for
+          ;; usbd-serial 0.1.1.  After git deps are rewritten to local paths,
+          ;; cargo can no longer compute the crates.io checksum from the lock.
+          ;; Drop that checksum line so cargo can resolve the path source.
+          (add-after 'patch-cargo-toml-git-deps
+              'patch-usbd-serial-lock-checksum
+            (lambda _
+              (use-modules (ice-9 textual-ports)
+                           (ice-9 regex))
+              (for-each
+               (lambda (lock-file)
+                 (let* ((content (call-with-input-file lock-file
+                                   get-string-all))
+                        (patched
+                         (regexp-substitute/global
+                          #f
+                          "([[]\\[package\\]\\]\nname = \"usbd-serial\"\nversion = \"0\\.1\\.1\"\nsource = \"registry\\+https://github\\.com/rust-lang/crates\\.io-index\"\n)checksum = \"[^\"]+\"\n"
+                          content
+                          'pre
+                          1
+                          'post)))
+                   (unless (string=? content patched)
+                     (call-with-output-file lock-file
+                       (lambda (port)
+                         (display patched port))))))
+               (find-files "." "^Cargo\\.lock$"))))
+
+          (add-after 'patch-usbd-serial-lock-checksum 'setup-cargo
             (lambda* (#:key inputs #:allow-other-keys)
               (let* ((rust-xous (assoc-ref inputs "rust-xous-toolchain"))
                      (riscv-ld (search-input-file inputs
