@@ -371,26 +371,44 @@
 
           ;; Phase 4: Set up cargo config
           ;; Some upstream lockfiles contain both crates.io and git entries for
-          ;; usbd-serial 0.1.1.  After git deps are rewritten to local paths,
-          ;; cargo can no longer compute the crates.io checksum from the lock.
-          ;; Drop that checksum line so cargo can resolve the path source.
+          ;; usbd-serial.  After git deps are rewritten to local paths, cargo
+          ;; can no longer compute the crates.io checksum from the lock.
+          ;; Drop that checksum line for the crates.io usbd-serial package.
           (add-after 'patch-cargo-toml-git-deps
               'patch-usbd-serial-lock-checksum
             (lambda _
               (use-modules (ice-9 textual-ports)
-                           (ice-9 regex))
+                          (srfi srfi-1))
               (for-each
                (lambda (lock-file)
                  (let* ((content (call-with-input-file lock-file
                                    get-string-all))
-                        (patched
-                         (regexp-substitute/global
-                          #f
-                          "([[]\\[package\\]\\]\nname = \"usbd-serial\"\nversion = \"0\\.1\\.1\"\nsource = \"registry\\+https://github\\.com/rust-lang/crates\\.io-index\"\n)checksum = \"[^\"]+\"\n"
-                          content
-                          'pre
-                          1
-                          'post)))
+                       (lines (string-split content #\newline))
+                       (patched-lines '())
+                       (is-usbd-serial? #f)
+                       (is-crates-io? #f))
+                   (for-each
+                   (lambda (line)
+                     (cond
+                      ((string-prefix? "[[package]]" line)
+                       (set! is-usbd-serial? #f)
+                       (set! is-crates-io? #f)
+                       (set! patched-lines (cons line patched-lines)))
+                      ((string-prefix? "name = \"usbd-serial\"" line)
+                       (set! is-usbd-serial? #t)
+                       (set! patched-lines (cons line patched-lines)))
+                      ((string-prefix?
+                        "source = \"registry+https://github.com/rust-lang/crates.io-index\"" line)
+                       (set! is-crates-io? #t)
+                       (set! patched-lines (cons line patched-lines)))
+                      ((and is-usbd-serial?
+                            is-crates-io?
+                            (string-prefix? "checksum = " line))
+                       #t)
+                      (else
+                       (set! patched-lines (cons line patched-lines)))))
+                   lines)
+                   (let ((patched (string-join (reverse patched-lines) "\n")))
                    (unless (string=? content patched)
                      (call-with-output-file lock-file
                        (lambda (port)
