@@ -384,35 +384,39 @@
                  (let* ((content (call-with-input-file lock-file
                                    get-string-all))
                        (lines (string-split content #\newline))
+                       ;; Build output lines in reverse, then reverse once.
                        (patched-lines '())
                        (is-usbd-serial? #f)
                        (is-crates-io? #f))
                    (for-each
-                   (lambda (line)
-                     (cond
-                      ((string-prefix? "[[package]]" line)
-                       (set! is-usbd-serial? #f)
-                       (set! is-crates-io? #f)
-                       (set! patched-lines (cons line patched-lines)))
-                      ((string-prefix? "name = \"usbd-serial\"" line)
-                       (set! is-usbd-serial? #t)
-                       (set! patched-lines (cons line patched-lines)))
-                      ((string-prefix?
-                        "source = \"registry+https://github.com/rust-lang/crates.io-index\"" line)
-                       (set! is-crates-io? #t)
-                       (set! patched-lines (cons line patched-lines)))
-                      ((and is-usbd-serial?
-                            is-crates-io?
-                            (string-prefix? "checksum = " line))
-                       #t)
-                      (else
-                       (set! patched-lines (cons line patched-lines)))))
-                   lines)
+                    (lambda (line)
+                      (cond
+                        ((string-prefix? "[[package]]" line)
+                         (set! is-usbd-serial? #f)
+                         (set! is-crates-io? #f)
+                         (set! patched-lines (cons line patched-lines)))
+                        ((string-prefix? "[" line)
+                         (set! is-usbd-serial? #f)
+                         (set! is-crates-io? #f)
+                         (set! patched-lines (cons line patched-lines)))
+                        ((string-prefix? "name = \"usbd-serial\"" line)
+                         (set! is-usbd-serial? #t)
+                         (set! patched-lines (cons line patched-lines)))
+                        ((string-prefix? "source = \"registry+" line)
+                         (set! is-crates-io? #t)
+                         (set! patched-lines (cons line patched-lines)))
+                        ((and is-usbd-serial?
+                             is-crates-io?
+                             (string-prefix? "checksum = " line))
+                         #t)
+                        (else
+                         (set! patched-lines (cons line patched-lines)))))
+                    lines)
                    (let ((patched (string-join (reverse patched-lines) "\n")))
-                   (unless (string=? content patched)
-                     (call-with-output-file lock-file
-                       (lambda (port)
-                         (display patched port))))))
+                     (unless (string=? content patched)
+                       (call-with-output-file lock-file
+                         (lambda (port)
+                          (display patched port))))))
                (find-files "." "^Cargo\\.lock$"))))
 
           (add-after 'patch-usbd-serial-lock-checksum 'setup-cargo
