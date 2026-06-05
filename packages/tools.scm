@@ -7,19 +7,14 @@
 
 (define-module (tools)
   #:use-module (guix packages)
-  #:use-module ((guix download)
-                #:select (url-fetch))
-  #:use-module ((guix build-system cargo)
-                #:select (crate-uri))
+  #:use-module (guix build-system cargo)
   #:use-module (guix git-download)
-  #:use-module (guix build-system gnu)
   #:use-module (guix build-system trivial)
   #:use-module (guix gexp)
   #:use-module ((guix licenses)
                 #:prefix license:)
   #:use-module (gnu packages cross-base)
   #:use-module (gnu packages base)
-  #:use-module (gnu packages compression)
   #:use-module (gnu packages rust)
   #:use-module (xous-config)
   #:export (rustfilt riscv32-none-elf-binutils elf-analyzer))
@@ -31,15 +26,8 @@
               (string->symbol (string-append "rust-" %rust-version))))
 
 ;;; =============================================================
-;;; CRATE SOURCES (generated via guix import crate -f Cargo.lock)
+;;; CRATE SOURCES for rustfilt (crate-source from cargo-build-system)
 ;;; =============================================================
-
-(define (crate-source name version hash)
-  (origin
-    (method url-fetch)
-    (uri (crate-uri name version))
-    (file-name (string-append "rust-" name "-" version ".tar.gz"))
-    (sha256 (base32 hash))))
 
 (define rust-bitflags-1.3.2
   (crate-source "bitflags" "1.3.2"
@@ -81,17 +69,18 @@
   (crate-source "winapi-x86_64-pc-windows-gnu" "0.4.0"
                 "0gqq64czqb64kskjryj8isp62m2sgvx25yyj3kpc2myh85w24bki"))
 
-(define %rustfilt-crates
-  (list rust-bitflags-1.3.2
-        rust-clap-2.34.0
-        rust-libc-0.2.144
-        rust-rustc-demangle-0.1.23
-        rust-term-size-0.3.2
-        rust-textwrap-0.11.0
-        rust-unicode-width-0.1.10
-        rust-winapi-0.3.9
-        rust-winapi-i686-pc-windows-gnu-0.4.0
-        rust-winapi-x86-64-pc-windows-gnu-0.4.0))
+(define-cargo-inputs lookup-cargo-inputs
+  (rustfilt =>
+            (list rust-bitflags-1.3.2
+                  rust-clap-2.34.0
+                  rust-libc-0.2.144
+                  rust-rustc-demangle-0.1.23
+                  rust-term-size-0.3.2
+                  rust-textwrap-0.11.0
+                  rust-unicode-width-0.1.10
+                  rust-winapi-0.3.9
+                  rust-winapi-i686-pc-windows-gnu-0.4.0
+                  rust-winapi-x86-64-pc-windows-gnu-0.4.0)))
 
 ;;; =============================================================
 ;;; TOOLS
@@ -111,86 +100,12 @@
        (file-name (git-file-name name version))
        (sha256
         (base32 "0bqczkqymx7h1fmxhh4scy2blfimhbmzlh02f9901ni29fkfgvgn"))))
-    (build-system gnu-build-system)
+    (build-system cargo-build-system)
     (arguments
-     (list
-      #:phases
-      #~(modify-phases %standard-phases
-          (delete 'configure)
-          (delete 'check)
-
-          ;; Set up vendor directory from crate sources
-          (add-after 'unpack 'setup-vendor
-            (lambda* (#:key inputs #:allow-other-keys)
-              (use-modules (ice-9 popen)
-                           (ice-9 rdelim))
-              (let ((vendor-dir (string-append (getcwd) "/vendor")))
-                (mkdir-p vendor-dir)
-                (for-each (lambda (input)
-                            (let* ((name (car input))
-                                   (path (cdr input)))
-                              (when (string-prefix? "crate-" name)
-                                (let* ((file-name (basename path))
-                                       (crate-name (substring file-name 5
-                                                              (- (string-length
-                                                                  file-name) 7)))
-                                       (crate-dir (string-append vendor-dir
-                                                                 "/"
-                                                                 crate-name))
-                                       (port (open-pipe* OPEN_READ
-                                                         "sha256sum" path))
-                                       (checksum-line (read-line port))
-                                       (_ (close-pipe port))
-                                       (checksum (car (string-split
-                                                       checksum-line #\space))))
-                                  (mkdir-p crate-dir)
-                                  (invoke "tar"
-                                          "xzf"
-                                          path
-                                          "-C"
-                                          crate-dir
-                                          "--strip-components=1")
-                                  (call-with-output-file (string-append
-                                                          crate-dir
-                                                          "/.cargo-checksum.json")
-                                    (lambda (port)
-                                      (format port
-                                              "{\"files\":{},\"package\":\"~a\"}"
-                                              checksum))))))) inputs))))
-
-          ;; Configure cargo to use vendored crates
-          (add-after 'setup-vendor 'configure-cargo
-            (lambda _
-              (mkdir-p ".cargo")
-              (call-with-output-file ".cargo/config.toml"
-                (lambda (port)
-                  (format port "[source.crates-io]~%")
-                  (format port "replace-with = \"vendored-sources\"~%")
-                  (format port "[source.vendored-sources]~%")
-                  (format port "directory = \"vendor\"~%")))))
-
-          ;; Build with cargo
-          (replace 'build
-            (lambda _
-              (setenv "CARGO_HOME"
-                      (string-append (getcwd) "/.cargo-home"))
-              (invoke "cargo" "build" "--release")))
-
-          ;; Install binary
-          (replace 'install
-            (lambda* (#:key outputs #:allow-other-keys)
-              (let ((bin (string-append (assoc-ref outputs "out") "/bin")))
-                (mkdir-p bin)
-                (install-file "target/release/rustfilt" bin)))))))
-    (native-inputs `(("rust" ,%rust)
-                     ("rust:cargo" ,%rust "cargo")
-                     ("tar" ,tar)
-                     ("gzip" ,gzip)
-                     ("coreutils" ,coreutils)
-                     ,@(map (lambda (crate)
-                              `(,(string-append "crate-"
-                                                (origin-file-name crate)) ,crate))
-                            %rustfilt-crates)))
+     (list #:rust %rust
+           #:tests? #f
+           #:install-source? #f))
+    (inputs (lookup-cargo-inputs 'rustfilt))
     (home-page "https://github.com/luser/rustfilt")
     (synopsis "Demangle Rust symbol names")
     (description
