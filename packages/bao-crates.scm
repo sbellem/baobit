@@ -2,6 +2,18 @@
 ;;;
 ;;; This file is managed by 'guix import'.  Do NOT add definitions manually.
 ;;;
+;;; SHIM (reference branch only): the native crate-source (from
+;;; (guix build-system cargo)) names its store item via
+;;; downstream-package-name, which hyphenates underscores
+;;; (rand_core -> rust-rand-core-...).  The pre-refactor baseline used a
+;;; local crate-source that PRESERVED underscores (rust-rand_core-...).
+;;; Those file-names feed the fixed-output store path, which in turn feeds
+;;; the vendor directory name embedded in firmware .rodata path strings.
+;;; To reproduce the baseline firmware byte-for-byte we hide the native
+;;; crate-source and restore the underscore-preserving one below.  This
+;;; intentionally breaks `guix import` round-tripping for this file; the
+;;; branch is a frozen regression oracle, not a maintained registry.
+;;;
 ;;; Workflow:
 ;;;   1. Copy this template:
 ;;;        cp scripts/bao-crates.tmpl.scm packages/bao-crates.scm
@@ -17,7 +29,7 @@
   #:use-module (guix packages)
   #:use-module (guix download)
   #:use-module (guix git-download)
-  #:use-module (guix build-system cargo)
+  #:use-module ((guix build-system cargo) #:hide (crate-source))
   #:use-module (bao-git-snippets)
   #:export (lookup-cargo-inputs))
 
@@ -25,6 +37,16 @@
 ;;; Rust libraries fetched from crates.io and from git sources
 ;;; referenced by xous-core's Cargo.lock files.
 ;;;
+
+;;; SHIM: underscore-preserving crate-source matching the pre-refactor
+;;; baseline (no modules/patches/snippet, so fixed-output store paths are
+;;; identical to baseline's).  See the SHIM note in the file header.
+(define (crate-source name version hash)
+  (origin
+    (method url-fetch)
+    (uri (crate-uri name version))
+    (file-name (string-append "rust-" name "-" version ".tar.gz"))
+    (sha256 (base32 hash))))
 
 (define qqqq-separator 'begin-of-crates)
 
