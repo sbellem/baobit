@@ -334,10 +334,25 @@
                    (when (string-suffix? "-checkout" entry)
                      (let ((src (string-append vendor "/" entry))
                            (dst (string-append git-vendor "/" entry)))
-                       (when (and (file-exists? src)
-                                  (not (file-exists? dst)))
+                       (when (file-exists? src)
+                         ;; A pre-existing dst means two checkouts resolved
+                         ;; to the same target name: fail loud instead of
+                         ;; silently picking a winner.
+                         (when (file-exists? dst)
+                           (error "move-git-checkouts: destination exists" dst))
                          (rename-file src dst)))))
-                 (or (scandir vendor) '())))))
+                 (or (scandir vendor) '()))
+                ;; Invariant: guix-vendor (the cargo directory source) must
+                ;; hold NO git checkouts afterwards.  A leftover -checkout
+                ;; shares the cargo index with same-id crates.io tarballs and
+                ;; is served non-deterministically (the boot0 CI failure that
+                ;; this split exists to prevent).  Assert it loudly.
+                (let ((leftover
+                       (filter (lambda (e) (string-suffix? "-checkout" e))
+                               (or (scandir vendor) '()))))
+                  (unless (null? leftover)
+                    (error "move-git-checkouts: checkouts remain in guix-vendor"
+                           leftover))))))
 
           ;; cargo-build-system's configure deletes Cargo.lock; we want to
           ;; preserve xous-core's lockfile pinning, so replace configure
