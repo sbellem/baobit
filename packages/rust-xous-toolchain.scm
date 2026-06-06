@@ -11,7 +11,7 @@
 (define-module (rust-xous-toolchain)
   #:use-module (guix packages)
   #:use-module (guix git-download)
-  #:use-module (guix build-system gnu)
+  #:use-module (guix build-system cargo)
   #:use-module (guix build-system trivial)
   #:use-module (guix gexp)
   #:use-module (guix utils)
@@ -85,13 +85,20 @@
     (version (string-append %rust-version ".0"))
     (source
      rust-xous-source)
-    (build-system gnu-build-system)
+    (build-system cargo-build-system)
     (arguments
      (list
+      #:rust %rust
+      #:tests? #f
+      #:install-source? #f
+      #:vendor-dir "guix-vendor"
       #:phases
       #~(modify-phases %standard-phases
-          (delete 'configure)
-          (delete 'check)
+          ;; Don't run upstream's check-for-pregenerated-files: it walks the
+          ;; entire rustc source tree (plus the unpacked vendor dir) and only
+          ;; emits warnings -- pure cost on a tree this large.
+          (delete 'check-for-pregenerated-files)
+
           (add-after 'unpack 'setup-submodules
             (lambda* (#:key inputs #:allow-other-keys)
               ;; Set up compiler-rt from the separate llvm-project fetch
@@ -103,52 +110,67 @@
                                   "src/llvm-project/compiler-rt")
                 ;; Set up backtrace-rs for std's backtrace support
                 (copy-recursively backtrace-src "library/backtrace"))))
-          (add-after 'setup-submodules 'setup-vendor
+
+          ;; cargo-build-system's unpack-rust-crates vendors every crate input
+          ;; into guix-vendor/, replacing the bespoke setup-vendor phase.  Its
+          ;; patch-cargo-checksums writes bare {"files":{}} stubs, which only
+          ;; suffices when Cargo.lock is absent.  We keep library/Cargo.lock to
+          ;; preserve std's dependency pinning, so cargo validates each crate's
+          ;; checksum against the lockfile and errors "could not be calculated"
+          ;; without a "package" field.  Add it for every tarball (the bare
+          ;; stub stays adequate for the path-dep backtrace checkout, which has
+          ;; no lockfile checksum).
+          (add-after 'patch-cargo-checksums 'fix-tarball-checksums
             (lambda* (#:key inputs #:allow-other-keys)
               (use-modules (ice-9 popen)
                            (ice-9 rdelim))
-              ;; Create vendor directory and unpack all crates
-              (let ((vendor-dir "library/vendor"))
-                (mkdir-p vendor-dir)
-                (for-each (lambda (input)
-                            (let* ((name (car input))
-                                   (path (cdr input)))
-                              ;; Only process crate-* inputs
-                              (when (string-prefix? "crate-" name)
-                                (let* ((file-name (basename path))
-                                       ;; Parse rust-memchr-2.7.6.tar.gz -> memchr-2.7.6
-                                       (crate-name (substring file-name 5 ;drop "rust-"
-                                                              (- (string-length
-                                                                  file-name) 7)))
-                                       (crate-dir (string-append vendor-dir
-                                                                 "/"
-                                                                 crate-name))
-                                       ;; Compute sha256 of the tarball for cargo checksum
-                                       (port (open-pipe* OPEN_READ
-                                                         "sha256sum" path))
-                                       (checksum-line (read-line port))
-                                       (_ (close-pipe port))
-                                       (checksum (car (string-split
-                                                       checksum-line #\space))))
-                                  (mkdir-p crate-dir)
-                                  (invoke "tar"
-                                          "xzf"
-                                          path
-                                          "-C"
-                                          crate-dir
-                                          "--strip-components=1")
-                                  ;; Create .cargo-checksum.json
-                                  (call-with-output-file (string-append
-                                                          crate-dir
-                                                          "/.cargo-checksum.json")
-                                    (lambda (port)
-                                      (format port
-                                              "{\"files\":{},\"package\":\"~a\"}"
-                                              checksum))))))) inputs))))
+              (define (tarball-sha256 path)
+                (let* ((port (open-pipe* OPEN_READ "sha256sum" path))
+                       (line (read-line port)))
+                  (close-pipe port)
+                  (car (string-split line #\space))))
+              (let ((vendor (string-append (getcwd) "/guix-vendor")))
+                (for-each
+                 (lambda (input)
+                   (let ((name (car input))
+                         (path (cdr input)))
+                     (when (and (string-prefix? "rust-" name)
+                                (string-suffix? ".tar.gz" path)
+                                (file-exists? path))
+                       (let* ((crate-dir (string-append
+                                          vendor "/"
+                                          (strip-store-file-name path)))
+                              (stub (string-append crate-dir
+                                                   "/.cargo-checksum.json")))
+                         (when (file-exists? crate-dir)
+                           (call-with-output-file stub
+                             (lambda (port)
+                               (format port
+                                       "{\"files\":{},\"package\":\"~a\"}"
+                                       (tarball-sha256 path)))))))))
+                 inputs))))
+
+          ;; cargo-build-system's configure deletes Cargo.lock and points the
+          ;; vendored-sources at a relative path.  Replace it: keep
+          ;; library/Cargo.lock (only the root Cargo.lock matters to the build
+          ;; system, but be explicit) and pin the vendor dir absolutely.
+          (replace 'configure
+            (lambda _
+              (let ((vendor-dir (string-append (getcwd) "/guix-vendor")))
+                (setenv "HOME" (getcwd))
+                (setenv "CARGO_HOME" (string-append (getcwd) "/.cargo"))
+                (mkdir-p (getenv "CARGO_HOME"))
+                (call-with-output-file ".cargo/config.toml"
+                  (lambda (port)
+                    (format port "[source.crates-io]~%")
+                    (format port "replace-with = \"vendored-sources\"~%")
+                    (format port "~%")
+                    (format port "[source.vendored-sources]~%")
+                    (format port "directory = \"~a\"~%" vendor-dir))))))
+
           (replace 'build
-            (lambda* (#:key native-inputs inputs #:allow-other-keys)
-              (let* ((vendor-dir (string-append (getcwd) "/library/vendor"))
-                     (riscv-gcc (search-input-file inputs
+            (lambda* (#:key inputs #:allow-other-keys)
+              (let* ((riscv-gcc (search-input-file inputs
                                  "/bin/riscv32-none-elf-gcc"))
                      (riscv-ar (search-input-file inputs
                                                   "/bin/riscv32-none-elf-ar"))
@@ -156,13 +178,6 @@
                      (gcc-lib (search-input-file inputs "/lib/libgcc_s.so.1"))
                      (gcc-lib-dir (dirname gcc-lib))
                      (cc-wrapper-dir (string-append (getcwd) "/cc-wrapper")))
-                ;; Set up environment
-                (setenv "HOME"
-                        (getcwd))
-                (setenv "CARGO_HOME"
-                        (string-append (getcwd) "/.cargo"))
-                (mkdir-p (getenv "CARGO_HOME"))
-
                 ;; Create cc symlink so cargo can find it
                 (mkdir-p cc-wrapper-dir)
                 (symlink host-gcc
@@ -173,15 +188,6 @@
 
                 ;; Set LD_LIBRARY_PATH so build scripts can find libgcc_s.so.1
                 (setenv "LD_LIBRARY_PATH" gcc-lib-dir)
-
-                ;; Configure vendored dependencies
-                (call-with-output-file ".cargo/config.toml"
-                  (lambda (port)
-                    (format port "[source.crates-io]~%")
-                    (format port "replace-with = \"vendored-sources\"~%")
-                    (format port "~%")
-                    (format port "[source.vendored-sources]~%")
-                    (format port "directory = \"~a\"~%" vendor-dir)))
 
                 ;; Environment for building
                 (setenv "CARGO_PROFILE_RELEASE_DEBUG" "0")
@@ -234,9 +240,7 @@
                           (find-files
                            "library/target/riscv32imac-unknown-xous-elf/release/deps"
                            "\\.rlib$"))))))))
-    (native-inputs `(("rust" ,%rust)
-                     ("rust:cargo" ,%rust "cargo")
-                     ("gcc-toolchain" ,gcc-toolchain)
+    (native-inputs `(("gcc-toolchain" ,gcc-toolchain)
                      ("git" ,git)
                      ("tar" ,tar)
                      ("gzip" ,gzip)
@@ -244,12 +248,9 @@
                      ("gcc-cross-sans-libc-riscv32-none-elf" ,riscv32-none-elf-gcc)
                      ("binutils-cross-riscv32-none-elf" ,riscv32-none-elf-binutils)
                      ("llvm-compiler-rt" ,llvm-compiler-rt-source)
-                     ("backtrace-rs" ,backtrace-rs-source)
-                     ;; Add all crates as inputs with crate- prefix
-                     ,@(map (lambda (crate)
-                              `(,(string-append "crate-"
-                                                (origin-file-name crate)) ,crate))
-                            sysroot-crate-origins)))
+                     ("backtrace-rs" ,backtrace-rs-source)))
+    ;; Crate sources are vendored by cargo-build-system's unpack-rust-crates.
+    (inputs (lookup-cargo-inputs 'sysroot))
     ;; Propagate the linker so consumers don't need to add it explicitly
     (propagated-inputs (list lld-18))
     (home-page "https://github.com/betrusted-io/rust")
