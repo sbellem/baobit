@@ -43,6 +43,15 @@ done
 # 1. Reset OUT to the empty template.
 #
 
+# Capture the previous generation's crate count *before* the template
+# overwrites it, so the post-regeneration guard can detect gross truncation
+# (the `guix import crate` lockfile bug can silently drop deps — see
+# feedback_guix_import_crate_lockfile_v4_bug).
+PREV_CRATES=0
+if [ -f "$OUT" ]; then
+  PREV_CRATES=$(grep -c '^(define rust-' "$OUT" || true)
+fi
+
 cp "$TEMPLATE" "$OUT"
 
 #
@@ -115,6 +124,58 @@ done
 #
 # Note: (bao-cargo-inputs) thunk lives in scripts/bao-crates.tmpl.scm —
 # already present in OUT from the initial template copy.
+
+#
+# Guard against the `guix import crate` lockfile-truncation bug, which
+# silently drops source-suffixed (git) deps — and can truncate the parse at
+# the first such entry, losing everything after it.  See memory file
+# feedback_guix_import_crate_lockfile_v4_bug.
+#
+# Single source of truth for the git-forked crates that MUST appear as
+# (method git-fetch) origins.  Keep in sync with %git-deps in packages/bao.scm
+# when xous-core's forks change.  Names are matched by stem anchored on the
+# version digit so `curve25519-dalek` does not shadow `curve25519-dalek-derive`.
+#
+
+EXPECTED_GIT_CRATES=(
+  armv7 atsama5d27 com-rs curve25519-dalek curve25519-dalek-derive
+  engine-25519 engine25519-as ring rqrr sha2 simple-fatfs
+  usb-device usbd-serial utralib xous-usb-hid
+)
+
+missing=()
+for stem in "${EXPECTED_GIT_CRATES[@]}"; do
+  if ! grep -qE "^\(define rust-${stem}-[0-9]" "$OUT"; then
+    missing+=("$stem")
+  fi
+done
+if [ "${#missing[@]}" -ne 0 ]; then
+  echo "error: ${#missing[@]} expected git-forked crate(s) missing from $OUT:" >&2
+  printf '  - %s\n' "${missing[@]}" >&2
+  echo "this is the signature of the 'guix import crate' lockfile-truncation bug." >&2
+  echo "verify GUIX_SRC ($GUIX_SRC) carries the fix-import-crate-from-lockfile patch." >&2
+  exit 8
+fi
+
+git_count=$(grep -c '(method git-fetch)' "$OUT" || true)
+if [ "$git_count" -lt "${#EXPECTED_GIT_CRATES[@]}" ]; then
+  echo "error: only $git_count git-fetch origins in $OUT, expected >= ${#EXPECTED_GIT_CRATES[@]}" >&2
+  exit 8
+fi
+
+# Gross-truncation check against the previous generation.  A drop may be the
+# import bug or a legitimate dependency removal; require an explicit opt-in.
+new_crates=$(grep -c '^(define rust-' "$OUT" || true)
+if [ "$PREV_CRATES" -gt 0 ] && [ "$new_crates" -lt "$PREV_CRATES" ]; then
+  if [ "${ALLOW_CRATE_DROP:-0}" = 1 ]; then
+    echo "warning: crate count dropped ${PREV_CRATES} -> ${new_crates} (ALLOW_CRATE_DROP=1)" >&2
+  else
+    echo "error: crate count dropped ${PREV_CRATES} -> ${new_crates}" >&2
+    echo "this may be the import truncation bug, or a legitimate removal." >&2
+    echo "if the reduction is intentional, re-run with ALLOW_CRATE_DROP=1." >&2
+    exit 8
+  fi
+fi
 
 #
 # Final sanity: paren balance + counts.
