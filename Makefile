@@ -60,7 +60,7 @@ endif
         rv32imac-none rv32imac-xous toolchain \
         boot0 boot1 alt-boot1 bootloader manifest baremetal-dabao dabao dabao-helloworld baosec \
         rustfilt boot0-elf-analysis boot1-elf-analysis alt-boot1-elf-analysis baremetal-dabao-elf-analysis dabao-elf-analysis baosec-elf-analysis \
-        all-dry dry-toolchain update-config
+        all-dry dry-toolchain update-config update-sysroot-crates
 
 help:
 	@echo "Targets:"
@@ -83,7 +83,8 @@ help:
 	@echo "    dabao-elf-analysis           - assembly listing for dabao"
 	@echo "    baosec-elf-analysis          - assembly listing for baosec"
 	@echo "  Config update:"
-	@echo "    update-config      - update xous-config.scm from baobit.toml"
+	@echo "    update-config         - update xous-config.scm from baobit.toml"
+	@echo "    update-sysroot-crates - regenerate xous-sysroot-crates.scm via guix import"
 	@echo ""
 	@echo "Options:"
 	@echo "  CHANNELS=file.scm  - use different channels file"
@@ -177,3 +178,14 @@ dry-toolchain:
 # Usage: edit baobit.toml, then run make update-config
 update-config:
 	./update-config.scm
+
+# Regenerate xous-sysroot-crates.scm from the pinned betrusted-io/rust fork's
+# library/Cargo.lock via `guix import`.  The lockfile path is resolved from the
+# package source, so it always tracks the commit pinned in xous-config.scm.
+# Round-trips cleanly: when already up to date this produces no diff.
+update-sysroot-crates:
+	RUST_SRC=$$(guix time-machine --channels=$(CHANNELS) -- build -L packages --source \
+	  -e '(@ (rust-xous-toolchain) rust-sysroot-riscv32imac-xous-elf)') && \
+	guix time-machine --channels=$(CHANNELS) -- import \
+	  -i packages/xous-sysroot-crates.scm \
+	  crate -f "$$RUST_SRC/library/Cargo.lock" sysroot
