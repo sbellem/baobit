@@ -12,19 +12,35 @@ inputs:
 runs:
   using: composite
   steps:
-    # Cache the guix time-machine channel checkout (~/.cache/guix/checkouts).
-    # On a cache hit the pinned commit is already present, so time-machine skips
-    # the channel git fetch entirely -- no dependency on the upstream Git host
-    # being reachable.  Keyed on the channel files so a pin bump busts it; the
-    # restore-keys prefix lets a bump reuse the previous warm checkout and fetch
-    # only the delta instead of re-cloning ~1 GB.
+    # Resolve the channel's keyring branch HEAD.  Guix authenticates a channel
+    # by checking each commit's signature against keys in the repo's `keyring`
+    # branch -- and it does NOT refresh that branch from a restored cache
+    # checkout.  So the keyring revision must be part of the cache key: otherwise
+    # a checkout cached with an old keyring is reused and authentication fails
+    # even after the keyring is fixed upstream (exactly what bit us once).
+    - name: Resolve channel keyring revision
+      id: keyring
+      shell: bash
+      run: |
+        url=$(sed -n 's/.*(url "\(https:[^"]*\)").*/\1/p' channels/guix.scm | head -1)
+        sha=$(git ls-remote "$url" refs/heads/keyring 2>/dev/null | awk '{print $1}')
+        echo "channel=$url keyring=${sha:-none}"
+        echo "sha=${sha:-none}" >> "$GITHUB_OUTPUT"
+
+    # Cache the guix time-machine channel checkout (~/.cache/guix).  On a hit the
+    # pinned commit and keyring are already present, so time-machine skips the
+    # channel git fetch entirely -- no dependency on the upstream Git host being
+    # reachable.  The key includes the keyring revision (correctness) and the
+    # channel files (pin bumps); restore-keys is scoped to the same keyring
+    # revision, so a pin bump can still reuse a warm checkout but a stale keyring
+    # can never be restored.
     - name: Cache Guix channel checkout
       uses: actions/cache@v4
       with:
         path: ~/.cache/guix
-        key: guix-tm-${{ runner.os }}-${{ hashFiles('channels/*.scm') }}
+        key: guix-tm-${{ runner.os }}-k${{ steps.keyring.outputs.sha }}-${{ hashFiles('channels/*.scm') }}
         restore-keys: |
-          guix-tm-${{ runner.os }}-
+          guix-tm-${{ runner.os }}-k${{ steps.keyring.outputs.sha }}-
 
     - name: Install Guix
       uses: sbellem/guix-install-action@dev
