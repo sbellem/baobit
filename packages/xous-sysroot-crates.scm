@@ -59,6 +59,10 @@
   (crate-source "libc" "0.2.177"
                 "0xjrn69cywaii1iq2lib201bhlvan7czmrm604h5qcm28yps4x18"))
 
+(define rust-libc-0.2.178
+  (crate-source "libc" "0.2.178"
+                "1490yks6mria93i3xdva1gm05cjz824g14mbv0ph32lxma6kvj9p"))
+
 (define rust-memchr-2.7.6
   (crate-source "memchr" "2.7.6"
                 "0wy29kf6pb4fbhfksjbs05jy2f32r2f3r1ga6qkmpz31k79h0azm"))
@@ -70,6 +74,10 @@
 (define rust-moto-rt-0.15.2
   (crate-source "moto-rt" "0.15.2"
                 "0cfhr15wz7iim0fwci71g14vj2d9rj0ck7n0jb5h4d9vglwbrx0b"))
+
+(define rust-moto-rt-0.16.0
+  (crate-source "moto-rt" "0.16.0"
+                "18fvnd0gqp2467dv4pplsiij1v62m4wfrq44181qw9gbvzvskbi9"))
 
 (define rust-object-0.37.3
   (crate-source "object" "0.37.3"
@@ -102,6 +110,10 @@
 (define rust-rustc-literal-escaper-0.0.5
   (crate-source "rustc-literal-escaper" "0.0.5"
                 "12s3w2mpgpjgzi6w19k6yr6vfcczkd6cv4vld514z9f5fzd2kvp4"))
+
+(define rust-rustc-literal-escaper-0.0.7
+  (crate-source "rustc-literal-escaper" "0.0.7"
+                "165id4v4qz2awa7lq2xi1hv41zfwv7nch7b8w1k79ns0ksxpms4b"))
 
 (define rust-shlex-1.3.0
   (crate-source "shlex" "1.3.0"
@@ -191,10 +203,10 @@
                                     rust-gimli-0.32.3
                                     rust-hashbrown-0.16.1
                                     rust-hermit-abi-0.5.2
-                                    rust-libc-0.2.177
+                                    rust-libc-0.2.178
                                     rust-memchr-2.7.6
                                     rust-miniz-oxide-0.8.9
-                                    rust-moto-rt-0.15.2
+                                    rust-moto-rt-0.16.0
                                     rust-object-0.37.3
                                     rust-r-efi-5.3.0
                                     rust-r-efi-alloc-2.1.0
@@ -202,7 +214,7 @@
                                     rust-rand-core-0.9.3
                                     rust-rand-xorshift-0.4.0
                                     rust-rustc-demangle-0.1.26
-                                    rust-rustc-literal-escaper-0.0.5
+                                    rust-rustc-literal-escaper-0.0.7
                                     rust-shlex-1.3.0
                                     rust-unwinding-0.2.8
                                     rust-vex-sdk-0.27.1
