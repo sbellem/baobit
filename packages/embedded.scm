@@ -129,9 +129,14 @@
                        (dest-lib (string-append out "/lib/rustlib/" target
                                                 "/lib")))
                   (mkdir-p dest-lib)
+                  ;; Rust 1.94's bootstrap builds std with metadata stubs in
+                  ;; the rlibs and the real metadata in sibling .rmeta files
+                  ;; (a sysroot-size optimization).  Drop the .rmeta and any
+                  ;; cross-compile fails with "only metadata stub found for
+                  ;; rlib dependency core", so install it alongside the rlibs.
                   (for-each (lambda (f)
                               (install-file f dest-lib))
-                            (find-files src-lib "\\.(rlib|a)$")))))
+                            (find-files src-lib "\\.(rlib|rmeta|a)$")))))
             (delete 'wrap-rustc)
             (delete 'delete-install-logs)))))
     (native-inputs (modify-inputs (package-native-inputs %rust)
