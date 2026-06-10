@@ -1,0 +1,39 @@
+name: Set up Guix
+description: >-
+  Install Guix, restore the time-machine channel checkout cache, and authorize
+  the baobit substitute servers.  Used by every workflow that runs
+  `guix time-machine`, so the cache and authorization live in one place.
+
+inputs:
+  version:
+    description: Guix version to install
+    default: "1.5.0"
+
+runs:
+  using: composite
+  steps:
+    # Cache the guix time-machine channel checkout (~/.cache/guix/checkouts).
+    # On a cache hit the pinned commit is already present, so time-machine skips
+    # the channel git fetch entirely -- no dependency on the upstream Git host
+    # being reachable.  Keyed on the channel files so a pin bump busts it; the
+    # restore-keys prefix lets a bump reuse the previous warm checkout and fetch
+    # only the delta instead of re-cloning ~1 GB.
+    - name: Cache Guix channel checkout
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/guix
+        key: guix-tm-${{ runner.os }}-${{ hashFiles('channels/*.scm') }}
+        restore-keys: |
+          guix-tm-${{ runner.os }}-
+
+    - name: Install Guix
+      uses: sbellem/guix-install-action@dev
+      with:
+        version: ${{ inputs.version }}
+        pullAfterInstall: false
+
+    - name: Authorize substitute servers
+      shell: bash
+      run: |
+        sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
+        sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub

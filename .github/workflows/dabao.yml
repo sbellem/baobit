@@ -21,16 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build ${{ matrix.root }}
         timeout-minutes: 120

@@ -14,16 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build rust-sysroot-riscv32imac-none-elf
         run: make CHANNELS=${{ matrix.channels }} ROOT=sysroot-none-elf rv32imac-none
@@ -71,16 +63,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build rust-sysroot-riscv32imac-xous-elf
         run: make CHANNELS=${{ matrix.channels }} ROOT=sysroot-xous-elf rv32imac-xous
@@ -158,16 +142,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build rust-xous-toolchain
         run: make CHANNELS=${{ matrix.channels }} ROOT=rust-xous toolchain
@@ -245,16 +221,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build bao1x-boot0
         run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot0 boot0
@@ -310,16 +278,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build bao1x-boot1
         run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-boot1 boot1
@@ -375,16 +335,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build bao1x-alt-boot1
         run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-alt-boot1 alt-boot1
@@ -440,16 +392,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build bao1x-baremetal-dabao
         run: make CHANNELS=${{ matrix.channels }} ROOT=bao1x-baremetal-dabao baremetal-dabao
@@ -505,16 +449,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build dabao
         run: make CHANNELS=${{ matrix.channels }} ROOT=dabao dabao
@@ -570,16 +506,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build dabao-helloworld
         run: make CHANNELS=${{ matrix.channels }} ROOT=dabao-helloworld dabao-helloworld
@@ -635,16 +563,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Guix
-        uses: sbellem/guix-install-action@dev
-        with:
-          version: "1.5.0"
-          pullAfterInstall: false
-
-      - name: Authorize substitute servers
-        run: |
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
-          sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+      - name: Set up Guix
+        uses: ./.github/actions/setup-guix
 
       - name: Build baosec
         run: make CHANNELS=${{ matrix.channels }} ROOT=baosec baosec
