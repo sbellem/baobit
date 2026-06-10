@@ -50,26 +50,27 @@
     (file-name "rust-xous-source")
     (sha256 (base32 %rust-xous-guix-hash))))
 
-;;; LLVM compiler-rt source (needed for builtins)
-;;; Fetched separately to avoid the 2GB+ recursive llvm-project fetch.
-;;; From betrusted-io/rust 1.93.0-xous .gitmodules: rust-lang/llvm-project branch rustc/21.1-2025-08-01
+;;; LLVM compiler-rt source (needed for builtins).  The whole llvm-project is
+;;; fetched (only compiler-rt/ is used) to avoid the recursive submodule fetch.
+;;; Commit + hash are the betrusted-io/rust fork's gitlink for src/llvm-project,
+;;; derived into xous-config.scm by update-config.scm.
 (define llvm-compiler-rt-source
   (origin
     (method git-fetch)
     (uri (git-reference (url "https://github.com/rust-lang/llvm-project")
-                        (commit "rustc/21.1-2025-08-01")))
+                        (commit %llvm-compiler-rt-commit)))
     (file-name "llvm-compiler-rt-source")
-    (sha256 (base32 "1ay736pskcf4fzrdqw9kw5z6dskf329hjxw4xyk88g688nmzbzmi"))))
+    (sha256 (base32 %llvm-compiler-rt-guix-hash))))
 
-;;; Backtrace-rs source (needed for std's backtrace support)
-;;; Commit from betrusted-io/rust 1.90.0-xous submodule reference
+;;; Backtrace-rs source (needed for std's backtrace support).  Commit + hash
+;;; are the fork's gitlink for library/backtrace, derived into xous-config.scm.
 (define backtrace-rs-source
   (origin
     (method git-fetch)
     (uri (git-reference (url "https://github.com/rust-lang/backtrace-rs")
-                        (commit "b65ab935fb2e0d59dba8966ffca09c9cc5a5f57c")))
+                        (commit %backtrace-rs-commit)))
     (file-name "backtrace-rs-source")
-    (sha256 (base32 "1rymm0cxx6ypjazxjps9w59qkw90rx6594w4ayxjym1a17p78vvw"))))
+    (sha256 (base32 %backtrace-rs-guix-hash))))
 
 ;;; RISC-V 32-bit bare-metal cross toolchain (needed for build)
 (define riscv32-none-elf-gcc
@@ -82,7 +83,7 @@
 (define-public rust-sysroot-riscv32imac-xous-elf
   (package
     (name "rust-sysroot-riscv32imac-xous-elf")
-    (version (string-append %rust-version ".0"))
+    (version (package-version %rust))
     (source
      rust-xous-source)
     (build-system cargo-build-system)
@@ -269,7 +270,7 @@ applications.  This package propagates lld-18 as the linker.")
 (define-public rust-sysroot-merged
   (package
     (name "rust-sysroot-merged")
-    (version (string-append %rust-version ".0"))
+    (version (package-version %rust))
     (source
      #f)
     (build-system trivial-build-system)
@@ -316,7 +317,7 @@ targets for Xous development.")
 (define-public rust-xous-toolchain
   (package
     (name "rust-xous-toolchain")
-    (version (string-append %rust-version ".0"))
+    (version (package-version %rust))
     (source
      #f)
     (build-system trivial-build-system)

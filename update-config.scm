@@ -79,8 +79,20 @@
       (lambda (port)
         (put-string port updated)))))
 
-(define (update-repo! commit url owner upstream-url vars)
-  "Clone repo, compute hash and git-describe, update config vars."
+(define (read-config-var var)
+  "Return the current string value of VAR in the config file, or #f."
+  (let* ((content (call-with-input-file %config-file get-string-all))
+         (m (string-match (string-append "\\(define " var "[ \n]+\"([^\"]*)\"")
+                          content)))
+    (and m (match:substring m 1))))
+
+(define* (update-repo! commit url owner upstream-url vars
+                       #:key (submodules '()) (derive-submodules? #t))
+  "Clone repo, compute hash and git-describe, update config vars.
+SUBMODULES is a list of (PATH COMMIT-VAR HASH-VAR): when DERIVE-SUBMODULES?
+is true, init each submodule (at the gitlink the superproject records) and
+write its commit + guix hash.  Skipping avoids the costly llvm-project fetch
+when the superproject commit has not changed."
   (let ((tmpdir (make-temp-dir))
         (start-dir (getcwd))
         (need-describe? (assoc-ref vars 'describe)))
@@ -99,15 +111,40 @@
             (run-git "fetch" "--tags" "upstream")))
         (run-git "fetch" "origin" commit)
         (run-git "-c" "advice.detachedHead=false" "checkout" commit)
-        (let ((describe (if need-describe?
-                            (run-command "git describe --long --abbrev=9")
-                            #f))
-              (hash (run-command "guix hash -rx .")))
+        (let* ((describe (if need-describe?
+                             (run-command "git describe --long --abbrev=9")
+                             #f))
+               (hash (run-command "guix hash -rx ."))
+               ;; Submodule pins are gitlinks recorded by the superproject.
+               ;; init each at that exact commit and hash its contents.
+               (sub-results
+                (if (and (pair? submodules) derive-submodules?)
+                    (begin
+                      (apply run-git "submodule" "update" "--init" "--depth" "1"
+                             (map car submodules))
+                      (map (lambda (s)
+                             (let ((path (car s))
+                                   (commit-var (cadr s))
+                                   (hash-var (caddr s)))
+                               (list path commit-var
+                                     (run-command
+                                      (string-append "git -C " path
+                                                     " rev-parse HEAD"))
+                                     hash-var
+                                     (run-command
+                                      (string-append "guix hash -rx " path)))))
+                           submodules))
+                    '())))
           (format #t "~%")
           (format #t "  commit:  ~a~a~a~%" %red commit %reset)
           (when describe
             (format #t "  version: ~a~a~a~%" %green describe %reset))
           (format #t "  hash:    ~a~a~a~%" %cyan hash %reset)
+          (for-each (lambda (r)
+                      (format #t "  ~a:~%" (car r))
+                      (format #t "    commit: ~a~a~a~%" %red (caddr r) %reset)
+                      (format #t "    hash:   ~a~a~a~%" %cyan (list-ref r 4) %reset))
+                    sub-results)
           (format #t "~%")
           (chdir start-dir)
           ;; Update config variables
@@ -115,6 +152,10 @@
           (when (and need-describe? describe)
             (update-config! need-describe? describe))
           (update-config! (assoc-ref vars 'hash) hash)
+          (for-each (lambda (r)
+                      (update-config! (cadr r) (caddr r))     ;commit-var
+                      (update-config! (list-ref r 3) (list-ref r 4))) ;hash-var
+                    sub-results)
           (format #t "~a✓ Updated ~a~a~%~%" %cyan %config-file %reset)))
       (lambda ()
         (chdir start-dir)
@@ -153,14 +194,33 @@
                     '((commit . "%xous-commit")
                       (describe . "%xous-git-describe")
                       (hash . "%xous-guix-hash")))
-      ;; Update rust-xous
+      ;; Update rust-xous (and its compiler-rt / backtrace submodule pins).
+      ;; The submodule pins are gitlinks inside the fork, so they only change
+      ;; when the fork commit changes — derive them only then, to avoid the
+      ;; ~2.4 GB llvm-project fetch on every run.  Force a re-derivation by
+      ;; clearing %llvm-compiler-rt-guix-hash in xous-config.scm.
       (format #t "~%~a=== Updating betrusted-io/rust ===~a~%" %green %reset)
-      (update-repo! rust-commit
-                    "https://github.com/betrusted-io/rust"
-                    "betrusted-io"
-                    #f
-                    '((commit . "%rust-xous-commit")
-                      (describe . #f)
-                      (hash . "%rust-xous-guix-hash"))))))
+      (let* ((old-rust-commit (read-config-var "%rust-xous-commit"))
+             (old-rt-hash (read-config-var "%llvm-compiler-rt-guix-hash"))
+             (derive? (or (not old-rust-commit)
+                          (not (string=? old-rust-commit rust-commit))
+                          (not old-rt-hash)
+                          (string=? old-rt-hash ""))))
+        (unless derive?
+          (format #t "  ~asubmodule pins unchanged (rust-xous commit same); skipping~a~%"
+                  %blue %reset))
+        (update-repo! rust-commit
+                      "https://github.com/betrusted-io/rust"
+                      "betrusted-io"
+                      #f
+                      '((commit . "%rust-xous-commit")
+                        (describe . #f)
+                        (hash . "%rust-xous-guix-hash"))
+                      #:submodules
+                      '(("src/llvm-project" "%llvm-compiler-rt-commit"
+                         "%llvm-compiler-rt-guix-hash")
+                        ("library/backtrace" "%backtrace-rs-commit"
+                         "%backtrace-rs-guix-hash"))
+                      #:derive-submodules? derive?)))))
 
 (main (command-line))
