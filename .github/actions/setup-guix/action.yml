@@ -1,8 +1,8 @@
 name: Set up Guix
 description: >-
-  Install Guix, restore the time-machine channel checkout cache, and authorize
-  the baobit substitute servers.  Used by every workflow that runs
-  `guix time-machine`, so the cache and authorization live in one place.
+  Install Guix and authorize the baobit substitute servers.  Used by every
+  workflow that runs `guix time-machine`, so setup and authorization live in
+  one place.
 
 inputs:
   version:
@@ -12,36 +12,13 @@ inputs:
 runs:
   using: composite
   steps:
-    # Resolve the channel's keyring branch HEAD.  Guix authenticates a channel
-    # by checking each commit's signature against keys in the repo's `keyring`
-    # branch -- and it does NOT refresh that branch from a restored cache
-    # checkout.  So the keyring revision must be part of the cache key: otherwise
-    # a checkout cached with an old keyring is reused and authentication fails
-    # even after the keyring is fixed upstream (exactly what bit us once).
-    - name: Resolve channel keyring revision
-      id: keyring
-      shell: bash
-      run: |
-        url=$(sed -n 's/.*(url "\(https:[^"]*\)").*/\1/p' channels/guix.scm | head -1)
-        sha=$(git ls-remote "$url" refs/heads/keyring 2>/dev/null | awk '{print $1}')
-        echo "channel=$url keyring=${sha:-none}"
-        echo "sha=${sha:-none}" >> "$GITHUB_OUTPUT"
-
-    # Cache the guix time-machine channel checkout (~/.cache/guix).  On a hit the
-    # pinned commit and keyring are already present, so time-machine skips the
-    # channel git fetch entirely -- no dependency on the upstream Git host being
-    # reachable.  The key includes the keyring revision (correctness) and the
-    # channel files (pin bumps); restore-keys is scoped to the same keyring
-    # revision, so a pin bump can still reuse a warm checkout but a stale keyring
-    # can never be restored.
-    - name: Cache Guix channel checkout
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/guix
-        key: guix-tm-${{ runner.os }}-k${{ steps.keyring.outputs.sha }}-${{ hashFiles('channels/*.scm') }}
-        restore-keys: |
-          guix-tm-${{ runner.os }}-k${{ steps.keyring.outputs.sha }}-
-
+    # NOTE: the ~/.cache/guix channel-checkout cache was removed deliberately.
+    # It was the only non-standard element in CI when the build started
+    # computing a *divergent* rust-sysroot derivation (rebuilding it from source
+    # instead of downloading the canonical, already-cached one). Channel-fetch
+    # reliability is now handled by pointing channels/guix.scm at the GitHub
+    # fork, so the cache is no longer needed for that. Re-add only if proven not
+    # to perturb the build graph (and key it on the keyring revision again).
     - name: Install Guix
       uses: sbellem/guix-install-action@dev
       with:
@@ -53,3 +30,26 @@ runs:
       run: |
         sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/guix.baobit.one.pub
         sudo /var/guix/profiles/per-user/root/current-guix/bin/guix archive --authorize < keys/ci.guix.moe.pub
+
+    # Drift guard: if guix.baobit.one's signing key ever stops matching the key
+    # we authorize, guix silently rejects every *signed* substitute and rebuilds
+    # the toolchain from source (only fixed-output crate sources still download).
+    # That once wasted ~52 min/job for 25 days unnoticed. Fail loudly instead.
+    # Server unreachable -> warn only, so a transient blip doesn't block all CI.
+    - name: Verify baobit.one signing key matches authorized key
+      shell: bash
+      run: |
+        served=$(curl -fsS --max-time 20 https://guix.baobit.one/signing-key.pub 2>/dev/null || true)
+        if [ -z "$served" ]; then
+          echo "::warning::guix.baobit.one unreachable — skipping signing-key drift check"
+          exit 0
+        fi
+        norm() { tr -d '[:space:]'; }
+        if [ "$(printf '%s' "$served" | norm)" = "$(norm < keys/guix.baobit.one.pub)" ]; then
+          echo "guix.baobit.one signing key matches keys/guix.baobit.one.pub ✓"
+        else
+          echo "::error::guix.baobit.one signing key != keys/guix.baobit.one.pub — signed substitutes will be REJECTED and the toolchain rebuilt from source (~52 min/job). Fix the server's signing key (baobit-factory: sops-secret-signing_key_{pub,sec} + restart guix-publish), or update keys/guix.baobit.one.pub if the key was intentionally rotated."
+          echo "served:     $served"
+          echo "authorized: $(cat keys/guix.baobit.one.pub)"
+          exit 1
+        fi
