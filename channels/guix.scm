@@ -12,7 +12,7 @@
         (name 'guix)
         (url "https://github.com/sbellem/guix.git")
         (branch "master")
-        (commit "b5e047ff9b400585cff590b7ee2f1629b24f6148")
+        (commit "28dcf1364ede4060aeb26b6b668afcbe4a6fb7f7")
         (introduction
          (make-channel-introduction "9edb3f66fd807b096b48283debdcddccfea34bad"
           (openpgp-fingerprint
