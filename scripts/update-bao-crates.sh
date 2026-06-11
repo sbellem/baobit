@@ -18,21 +18,20 @@
 #
 # Env:
 #   XOUS_SRC  xous-core checkout (default: $HOME/code/baochip/xous-core-dev)
-#   GUIX_SRC  patched guix checkout (default: $HOME/code/guix/guix)
+#   CHANNELS  guix channels file (default: channels/guix.scm)
 #   OUT       output file (default: packages/bao-crates.scm)
 
 set -euo pipefail
 
 XOUS_SRC="${XOUS_SRC:-$HOME/code/baochip/xous-core-dev}"
-GUIX_SRC="${GUIX_SRC:-$HOME/code/guix/guix}"
+CHANNELS="${CHANNELS:-channels/guix.scm}"
 OUT="${OUT:-packages/bao-crates.scm}"
 TEMPLATE="${TEMPLATE:-scripts/bao-crates.tmpl.scm}"
 
 MAIN_LOCK="$XOUS_SRC/Cargo.lock"
 LOCALES_LOCK="$XOUS_SRC/locales/Cargo.lock"
-PRE_INST_ENV="$GUIX_SRC/pre-inst-env"
 
-for f in "$MAIN_LOCK" "$LOCALES_LOCK" "$PRE_INST_ENV" "$TEMPLATE"; do
+for f in "$MAIN_LOCK" "$LOCALES_LOCK" "$CHANNELS" "$TEMPLATE"; do
   if [ ! -e "$f" ]; then
     echo "error: missing required input: $f" >&2
     exit 1
@@ -43,22 +42,26 @@ done
 # 1. Reset OUT to the empty template.
 #
 
+# Capture the previous generation's crate count *before* the template
+# overwrites it, so the post-regeneration guard can detect a gross drop.
+PREV_CRATES=0
+if [ -f "$OUT" ]; then
+  PREV_CRATES=$(grep -c '^(define rust-' "$OUT" || true)
+fi
+
 cp "$TEMPLATE" "$OUT"
 
 #
 # 2. Run the importer once per lockfile.
 #
 
-OUT_ABS=$(realpath "$OUT")
-
+# Run the importer from the pinned channel guix via time-machine.
 run_importer() {
   local lock=$1 key=$2
   echo "=== importing $key from $lock ==="
-  ( cd "$GUIX_SRC" \
-    && guix shell -D guix --pure -- \
-         ./pre-inst-env guix import \
-           -i "$OUT_ABS" crate --lockfile="$lock" "$key" \
-         2>&1 | grep -vE '^;;;|newer than compiled|^WARNING|^<unknown' || true )
+  guix time-machine --channels="$CHANNELS" -- import \
+    -i "$OUT" crate --lockfile="$lock" "$key" \
+    2>&1 | grep -vE '^;;;|newer than compiled|^WARNING|^<unknown' || true
 }
 
 run_importer "$MAIN_LOCK" xous-core
@@ -115,6 +118,52 @@ done
 #
 # Note: (bao-cargo-inputs) thunk lives in scripts/bao-crates.tmpl.scm —
 # already present in OUT from the initial template copy.
+
+#
+# Sanity-check the regenerated registry: every git-forked crate must appear as
+# a (method git-fetch) origin.  This list is the single source of truth for
+# those crates -- keep it in sync with %git-deps in packages/bao.scm when
+# xous-core's forks change.  Names are matched by stem anchored on the version
+# digit so `curve25519-dalek` does not shadow `curve25519-dalek-derive`.
+#
+
+EXPECTED_GIT_CRATES=(
+  armv7 atsama5d27 com-rs curve25519-dalek curve25519-dalek-derive
+  engine-25519 engine25519-as ring rqrr sha2 simple-fatfs
+  usb-device usbd-serial utralib xous-usb-hid
+)
+
+missing=()
+for stem in "${EXPECTED_GIT_CRATES[@]}"; do
+  if ! grep -qE "^\(define rust-${stem}-[0-9]" "$OUT"; then
+    missing+=("$stem")
+  fi
+done
+if [ "${#missing[@]}" -ne 0 ]; then
+  echo "error: ${#missing[@]} expected git-forked crate(s) missing from $OUT:" >&2
+  printf '  - %s\n' "${missing[@]}" >&2
+  echo "the regenerated registry is incomplete." >&2
+  exit 8
+fi
+
+git_count=$(grep -c '(method git-fetch)' "$OUT" || true)
+if [ "$git_count" -lt "${#EXPECTED_GIT_CRATES[@]}" ]; then
+  echo "error: only $git_count git-fetch origins in $OUT, expected >= ${#EXPECTED_GIT_CRATES[@]}" >&2
+  exit 8
+fi
+
+# Guard against a gross drop vs the previous generation.  A drop may be a
+# legitimate dependency removal; require an explicit opt-in.
+new_crates=$(grep -c '^(define rust-' "$OUT" || true)
+if [ "$PREV_CRATES" -gt 0 ] && [ "$new_crates" -lt "$PREV_CRATES" ]; then
+  if [ "${ALLOW_CRATE_DROP:-0}" = 1 ]; then
+    echo "warning: crate count dropped ${PREV_CRATES} -> ${new_crates} (ALLOW_CRATE_DROP=1)" >&2
+  else
+    echo "error: crate count dropped ${PREV_CRATES} -> ${new_crates}" >&2
+    echo "if the reduction is intentional, re-run with ALLOW_CRATE_DROP=1." >&2
+    exit 8
+  fi
+fi
 
 #
 # Final sanity: paren balance + counts.
