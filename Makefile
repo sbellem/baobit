@@ -60,7 +60,7 @@ endif
         rv32imac-none rv32imac-xous toolchain \
         boot0 boot1 alt-boot1 bootloader manifest baremetal-dabao dabao dabao-helloworld baosec \
         rustfilt boot0-elf-analysis boot1-elf-analysis alt-boot1-elf-analysis baremetal-dabao-elf-analysis dabao-elf-analysis baosec-elf-analysis \
-        all-dry dry-toolchain update-config update-sysroot-crates
+        all-dry dry-toolchain update-config update-sysroot-crates update-bao-crates
 
 help:
 	@echo "Targets:"
@@ -85,6 +85,7 @@ help:
 	@echo "  Config update:"
 	@echo "    update-config         - update xous-config.scm from baobit.toml"
 	@echo "    update-sysroot-crates - regenerate xous-sysroot-crates.scm via guix import"
+	@echo "    update-bao-crates     - regenerate bao-crates.scm from pinned xous-core Cargo.lock"
 	@echo ""
 	@echo "Options:"
 	@echo "  CHANNELS=file.scm  - use different channels file"
@@ -189,3 +190,10 @@ update-sysroot-crates:
 	guix time-machine --channels=$(CHANNELS) -- import \
 	  -i packages/xous-sysroot-crates.scm \
 	  crate -f "$$RUST_SRC/library/Cargo.lock" sysroot
+
+# Regenerate bao-crates.scm (firmware dependency registry) from xous-core's
+# Cargo.lock at the commit pinned in xous-config.scm.  The script fetches the
+# pinned xous-core-source origin via guix, so it never assumes a local
+# checkout.  Round-trips cleanly: when already up to date this produces no diff.
+update-bao-crates:
+	CHANNELS=$(CHANNELS) scripts/update-bao-crates.sh
