@@ -48,6 +48,14 @@ the last group is something you can check yourself.
 | 7 | The channel pins you build with are the ones your device named | Checkable — see Step 2. |
 | 8 | Your device's security state is nominal | **Checkable — see Step 1b. This is the one group of assumptions this document can convert into evidence, and it costs nothing.** |
 
+The single point everything rests on is **chip probe** (assumption 2), where
+boot0, boot1, the public keys and the lock fuses are all written. If that step
+was honest, later manufacturing stages are far more constrained: final test and
+anything after it can only load *signed* code and can only advance monotonic
+one-way counters, and both leave traces that `audit` prints. That is what the
+state checks in Step 1b are for — they do not verify chip probe (nothing in
+software can), but they detect the reachable tampering downstream of it.
+
 If assumption 2 does not hold, nothing else in this document helps. There is no
 on-device check that detects a dishonest chip probe, because the reference
 values such a check would use are themselves written at chip probe.
@@ -101,12 +109,13 @@ Boot1 anti-rollback OK
 
 ### Step 1b: Check the security state
 
-These lines are printed by the same `audit` run and each one can invalidate the
-comparison you are about to make. Check every one of them.
+These lines are printed by the same `audit` run. Some of them can invalidate the
+comparison you are about to make; others change what a successful comparison
+means. Check every one of them.
 
 | Check | Required | If it differs |
 |-------|----------|---------------|
-| `Stepping is:` | `A1` | On A0 silicon the RRAM code-area protection can be cleared at runtime, which bypasses most of the security model. Hash comparison is not meaningful. |
+| `Stepping is:` | `A1` on production silicon | `A0` is pre-production (DEF CON 34 badges and current dev boards are A0). On A1 the RRAM code-area write protection is hard-wired on. On A0 the runtime control for that protection can be cleared (this is exactly what the stepping probe detects). Whether that alone makes boot0 rewritable, or whether a separate factory-burned write-lock still holds, is not established from public documentation. Treat A0 as offering a *weaker* immutability guarantee for boot0 than A1: on A0 you are relying more heavily on assumptions 2 and 8 and on the hash comparison itself. |
 | `Boot partition is:` | `Ok(PrimaryPartition)` | On `AlternatePartition` the running boot1 is the image at `0x6006_0000`, but `audit` always hashes the partition at `0x6002_0000`. The reported `boot1 code only` is then for code that is **not executing**. |
 | `Boot0:` / `Boot1: key n/n (tag)` | `bao1` or `bao2` | `dev` means the image is signed with the developer key, whose private half is public. Anyone can produce firmware this device will boot, so nothing it reports is trustworthy. `beta` is a test key. |
 | `Revocations:` | all `enabled` | Revocations are monotonic and irreversible. If the Baochip keys are revoked and only `dev` remains, the device will accept firmware signed by anyone. |
@@ -119,8 +128,10 @@ comparison you are about to make. Check every one of them.
 | `Boot1 anti-rollback OK` | present | The image's rollback counter disagrees with the device's. |
 | `** System did not meet minimum requirements for security **` | **absent** | This line is printed if *any* of the above failed. Treat it as a hard stop. |
 
-If any check fails, the hash comparison in Step 3 may still succeed while
-telling you nothing useful. Resolve the state problem first.
+`AlternatePartition`, a `dev` signing key, and developer mode are the ones that
+can make a successful hash comparison worthless — resolve those before
+continuing. The rest narrow what the comparison establishes without negating it;
+note them and read the relevant row.
 
 ## Step 2: Rebuild from source
 
@@ -343,8 +354,9 @@ have confirmed the padding convention for your hardware revision.
 
 - That the source is benign. No step here reads xous-core.
 - That the bytes reported are the bytes executing. The measurement comes from
-  boot1, which boot0 authorized, and boot0 cannot be read by any other means on
-  a production device.
+  boot1, which boot0 authorized, and there is no independent path to read boot0.
+  On A0 silicon the guarantee is weaker still — see the `Stepping` row in
+  Step 1b.
 - Anything at all, if chip probe was dishonest (assumption 2). Every reference
   value the device compares against is written at that step.
 
