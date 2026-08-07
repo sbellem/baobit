@@ -11,6 +11,10 @@
 Reproducible build toolchain for [Baochip][] firmware. Rebuild from source
 and verify that the firmware on your device matches the public source code.
 
+> **DEF CON 34 badge?** Start with **[DC34.md](DC34.md)** — a self-contained
+> walkthrough calibrated to the badge's hardware and firmware, including the
+> board-specific package to build and how to read the `audit` output.
+
 ## Prerequisites
 
 Install [GNU Guix](https://guix.gnu.org/manual/1.5.0/en/html_node/Installation.html)
@@ -21,23 +25,64 @@ on your host system. Guix is required for all build and verification workflows.
 Run `audit` on your Baochip to get the firmware hashes and the baobit commit
 that built it. Then rebuild from source and compare.
 
-```bash
-BAOBIT_COMMIT_SHORT=441559d7   # first 8 chars of "baobit toolchain" from audit
+### From a checkout (recommended)
 
+```bash
+# The full 40-character "baobit toolchain" value from audit
+BAOBIT_COMMIT=441559d7e1984623ec0a52f60f90240c740b6c41
+
+git clone https://github.com/sbellem/baobit && cd baobit
+git checkout "${BAOBIT_COMMIT}"
+
+make boot0 ROOT=boot0
+make boot1 ROOT=boot1
+```
+
+Everything is pinned by the commit you checked out: the Guix revision comes
+from `channels/guix.scm` at that commit, the package definitions from that
+same tree. Nothing is fetched from a mutable branch.
+
+### From a channels file (quick check)
+
+```bash
 curl --proto '=https' --tlsv1.2 -sSfLo baobit.scm \
-  "https://raw.githubusercontent.com/sbellem/baobit/refs/heads/main/channels/baobit.${BAOBIT_COMMIT_SHORT}.scm"
+  "https://raw.githubusercontent.com/sbellem/baobit/refs/heads/main/channels/baobit.${BAOBIT_COMMIT:0:8}.scm"
 
 guix time-machine --channels=baobit.scm -- build bao1x-boot0 --root=boot0
 guix time-machine --channels=baobit.scm -- build bao1x-boot1 --root=boot1
+```
 
+**Inspect `baobit.scm` before using it.** It is fetched from a mutable branch,
+addressed by a 32-bit prefix, and it carries the channel introductions that
+bootstrap all subsequent Guix authentication — so whoever controls that file
+controls what "authenticated" means. Confirm its `baobit` commit is the full
+value from your audit, and that both introductions match the ones published in
+[VERIFY.md](VERIFY.md).
+
+### Compare
+
+```bash
 sha512sum boot0/bao1x-boot0-presign.img   # should match "boot0 code only"
 sha512sum boot1/bao1x-boot1-presign.img   # should match "boot1 code only"
 ```
 
-If the hashes match, the firmware on your device is identical to what you
-built from the public source code.
+Guix may satisfy a build from a substitute server rather than compiling it
+locally, in which case you have confirmed that your build inputs agree with the
+server's — not that you reproduced the output. To force an independent local
+rebuild and error out if the result is not bit-identical:
 
-See [VERIFY.md](VERIFY.md) for the full step-by-step guide.
+```bash
+make boot0 CHECK=1
+make boot1 CHECK=1
+```
+
+A match shows the code region on your device is byte-identical to a build from
+the named baobit commit. It does **not** prove those bytes are what is
+executing — the hashes are reported by `audit`, which runs in boot1, over an
+unauthenticated serial console.
+
+See [VERIFY.md](VERIFY.md) for the full guide, the device state checklist, and
+the trust assumptions the whole procedure rests on.
 
 ## 2. Verify Official Release Images
 
