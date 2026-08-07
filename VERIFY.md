@@ -111,6 +111,36 @@ If hashes match, the boot0 and boot1 resident in your device's RRAM are
 identical to what you built from the public source code — subject to the
 assumptions in [Trust model](#trust-model) above.
 
+## DEF CON 34 badges
+
+Badges report `Board type reads as: Oem` and differ from the flow above in three
+ways:
+
+1. **boot0 and boot1 were built from different baobit commits.** Use each
+   image's own `baobit toolchain` value.
+2. **boot1 is the "lite" variant** - build `bao1x-boot1-lite`, not
+   `bao1x-boot1`.
+3. **Badges are A0 (pre-production) silicon**, so boot0 immutability is an
+   assumption rather than hardware-enforced (see [Trust model](#trust-model)).
+
+For a badge running `v0.10.1-0-gbcfdca404` the commits are `441559d7` (boot0)
+and `4be6e2d6` (boot1). Substitute the values your own `audit` reports:
+
+```bash
+# boot0 -- its "boot0 baobit toolchain" commit
+curl --proto '=https' --tlsv1.2 -sSfLo boot0.scm \
+  "https://raw.githubusercontent.com/sbellem/baobit/refs/heads/main/channels/baobit.441559d7.scm"
+guix time-machine --channels=boot0.scm -- build bao1x-boot0 --root=boot0
+
+# boot1 -- its "boot1 baobit toolchain" commit; note the -lite package
+curl --proto '=https' --tlsv1.2 -sSfLo boot1.scm \
+  "https://raw.githubusercontent.com/sbellem/baobit/refs/heads/main/channels/baobit.4be6e2d6.scm"
+guix time-machine --channels=boot1.scm -- build bao1x-boot1-lite --root=boot1
+
+sha512sum boot0/bao1x-boot0-presign.img   # match "boot0 code only"
+sha512sum boot1/bao1x-boot1-presign.img   # match "boot1 code only"
+```
+
 ## Step 4: Verify Signatures on Official Release Images
 
 Official signed firmware images are published at
