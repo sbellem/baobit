@@ -4,6 +4,41 @@ Verify that the firmware on your Baochip matches the public source code by
 rebuilding it from source and comparing hashes. Optionally verify Ed25519
 signatures on the official release images.
 
+## Trust model
+
+This procedure is useful only within a set of assumptions. Stating them is what
+tells you exactly what a hash match does and does not establish.
+
+**The measurement runs in boot1.** The hashes come from the `audit` command,
+which executes *in boot1*: it reads boot0 and boot1 out of RRAM and prints their
+SHA-512. The report is therefore only as honest as the boot1 producing it.
+
+**You supply boot1, so the measurer is trusted by construction.** In this model
+you either build boot1 from source and install it yourself, or you install an
+official image only after confirming its presign hash equals your own build
+(Step 3). Either way, the boot1 doing the measuring is one you have verified —
+its honesty is established, not assumed.
+
+**The one root assumption is an honest chip probe (CP).** boot0, the reference
+public keys, and the write-locks that protect them are all burned at the chip
+probe stage of manufacturing. Every on-device check compares against a value
+written there, so a dishonest CP cannot be detected in software. Given a correct
+CP, boot0 is genuine and immutable, so it faithfully launches the boot1 you
+installed, which in turn reports the true contents of RRAM.
+
+**What a match therefore means.** If CP was honest and your rebuilt hashes match
+the audit output, the boot0 and boot1 actually resident on your device are the
+images built from the published source. If CP was *not* honest, this procedure
+establishes nothing — and no software check can tell the difference.
+
+**Residual assumptions, even with an honest CP:**
+
+- boot0 has not been altered since CP. On production **A1** silicon this is held
+  by a hardware write-lock; on pre-production **A0** silicon it is an assumption, not a guarantee.
+- The silicon returns the true contents of RRAM when boot1 reads it — no shadow
+  memory or read remapping. This is a hardware assumption, addressable only by
+  physical inspection (e.g. IRIS), not by this procedure.
+
 ## Prerequisites
 
 - [GNU Guix](https://guix.gnu.org/) (for reproducible builds)
@@ -72,8 +107,9 @@ echo "563802e7f10fd0ca0a1c700c6313eff624aa57d9cd88d3c33af4b720eff5480432e01c1169
 boot0/bao1x-boot0-presign.img: OK
 ```
 
-If hashes match, the firmware on your device is identical to what you built
-from the public source code.
+If hashes match, the boot0 and boot1 resident in your device's RRAM are
+identical to what you built from the public source code — subject to the
+assumptions in [Trust model](#trust-model) above.
 
 ## Step 4: Verify Signatures on Official Release Images
 
@@ -142,8 +178,8 @@ Verify consistency:
 - **`Padded SHA512`** from `verify-binary` should match the corresponding hash
   in the release `hashes.txt`.
 
-If all three agree:
-1. The firmware on your device matches the public source code
+If all three agree, then under the [Trust model](#trust-model) above:
+1. The firmware resident on your device matches the public source code
 2. The official release images carry valid signatures from a known Baochip key
 3. Your reproducible build produces the same binary
 

@@ -34,8 +34,11 @@ sha512sum boot0/bao1x-boot0-presign.img   # should match "boot0 code only"
 sha512sum boot1/bao1x-boot1-presign.img   # should match "boot1 code only"
 ```
 
-If the hashes match, the firmware on your device is identical to what you
-built from the public source code.
+If the hashes match, the boot0 and boot1 resident on your device are identical
+to what you built from the public source code — subject to a set of trust
+assumptions, chiefly an honest chip-probe (factory provisioning) step. What the
+match does and does not establish is spelled out in the
+[Trust model](VERIFY.md#trust-model).
 
 See [VERIFY.md](VERIFY.md) for the full step-by-step guide.
 
