@@ -1,13 +1,13 @@
 # Baochip Firmware Verification
-
 Verify that the firmware on your Baochip matches the public source code by
 rebuilding it from source and comparing hashes. Optionally verify Ed25519
 signatures on the official release images.
 
 ## Trust model
-
-This procedure is useful only within a set of assumptions. Stating them is what
-tells you exactly what a hash match does and does not establish.
+This procedure is useful only within a set of assumptions. We briefly outline
+these assumptions below. Please also read baochip's documentation on its bootloader's
+[security model](https://github.com/betrusted-io/xous-core/blob/dev/README-baochip.md#bootloaders),
+and [secure boot chain](https://github.com/betrusted-io/xous-core/blob/dev/bao1x-boot/BOOTCHAIN.md).
 
 **The measurement runs in boot1.** The hashes come from the `audit` command,
 which executes *in `boot1`*: it reads `boot0` and `boot1` out of RRAM and prints
