@@ -555,6 +555,13 @@
                        "bao1x-boot1-lite"
                        #:target-dir "riscv32imac-unknown-none-elf"))
 
+;; Same image as bao1x-boot1-lite, plus the boot1 `fix-ifr` feature
+;; (bao1x-hal/redteam), which rewrites the IFR write-lock slot at boot.
+(define-public bao1x-boot1-lite-fix-ifr
+  (make-firmware-build "bao1x-boot1-lite-fix-ifr"
+                       "bao1x-boot1-lite --loader-feature fix-ifr"
+                       #:target-dir "riscv32imac-unknown-none-elf"))
+
 (define-public bao1x-alt-boot1
   (make-firmware-build "bao1x-alt-boot1"
                        "bao1x-alt-boot1"

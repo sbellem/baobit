@@ -58,7 +58,7 @@ endif
 
 .PHONY: help rust-1.91 rust-1.92 rust-1.93 \
         rv32imac-none rv32imac-xous toolchain \
-        boot0 boot1 boot1-lite alt-boot1 alt-boot1-lite bootloader manifest baremetal-dabao dabao dabao-helloworld baosec \
+        boot0 boot1 boot1-lite boot1-lite-fix-ifr alt-boot1 alt-boot1-lite bootloader manifest baremetal-dabao dabao dabao-helloworld baosec \
         rustfilt boot0-elf-analysis boot1-elf-analysis boot1-lite-elf-analysis alt-boot1-elf-analysis alt-boot1-lite-elf-analysis baremetal-dabao-elf-analysis dabao-elf-analysis baosec-elf-analysis \
         all-dry dry-toolchain update-config update-sysroot-crates
 
@@ -72,6 +72,8 @@ help:
 	@echo "    toolchain        - rust-xous-toolchain (both sysroots)"
 	@echo "  Firmware:"
 	@echo "    boot0 boot1 alt-boot1 baremetal-dabao dabao dabao-helloworld baosec"
+	@echo "    boot1-lite alt-boot1-lite"
+	@echo "    boot1-lite-fix-ifr - boot1-lite + --loader-feature fix-ifr"
 	@echo "    bootloader       - build all bootloaders (boot0 + boot1 + alt-boot1)"
 	@echo "    manifest         - build all production artifacts (via manifest.scm)"
 	@echo "  ELF analysis (for debugging panics):"
@@ -127,6 +129,9 @@ boot1:
 
 boot1-lite:
 	$(TM) -e '(@ (bao) bao1x-boot1-lite)'
+
+boot1-lite-fix-ifr:
+	$(TM) -e '(@ (bao) bao1x-boot1-lite-fix-ifr)'
 
 alt-boot1:
 	$(TM) -e '(@ (bao) bao1x-alt-boot1)'
