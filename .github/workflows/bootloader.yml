@@ -13,7 +13,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [boot0, boot1, boot1-lite, alt-boot1, alt-boot1-lite]
+        target:
+          - boot0
+          - boot1
+          - boot1-lite
+          - boot1-lite-fix-ifr
+          - alt-boot1
+          - alt-boot1-lite
+          - alt-boot1-lite-fix-ifr
     steps:
       - uses: actions/checkout@v4
 

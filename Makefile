@@ -59,7 +59,8 @@ endif
 .PHONY: help rust-1.91 rust-1.92 rust-1.93 \
         rv32imac-none rv32imac-xous toolchain \
         boot0 boot1 boot1-lite boot1-lite-fix-ifr alt-boot1 alt-boot1-lite alt-boot1-lite-fix-ifr bootloader manifest baremetal-dabao dabao dabao-helloworld baosec \
-        rustfilt boot0-elf-analysis boot1-elf-analysis boot1-lite-elf-analysis alt-boot1-elf-analysis alt-boot1-lite-elf-analysis baremetal-dabao-elf-analysis dabao-elf-analysis baosec-elf-analysis \
+        rustfilt boot0-elf-analysis boot1-elf-analysis boot1-lite-elf-analysis alt-boot1-elf-analysis alt-boot1-lite-elf-analysis \
+        boot1-lite-fix-ifr-elf-analysis alt-boot1-lite-fix-ifr-elf-analysis baremetal-dabao-elf-analysis dabao-elf-analysis baosec-elf-analysis \
         all-dry dry-toolchain update-config update-sysroot-crates
 
 help:
@@ -84,6 +85,7 @@ help:
 	@echo "    baremetal-dabao-elf-analysis - assembly listing for baremetal-dabao"
 	@echo "    dabao-elf-analysis           - assembly listing for dabao"
 	@echo "    baosec-elf-analysis          - assembly listing for baosec"
+	@echo "    also: boot1-lite, alt-boot1-lite and their -fix-ifr variants"
 	@echo "  Config update:"
 	@echo "    update-config         - update xous-config.scm from baobit.toml"
 	@echo "    update-sysroot-crates - regenerate xous-sysroot-crates.scm via guix import"
@@ -177,6 +179,12 @@ alt-boot1-elf-analysis:
 
 alt-boot1-lite-elf-analysis:
 	$(TM) -e '((@ (tools) elf-analyzer) (@ (bao) bao1x-alt-boot1-lite))'
+
+boot1-lite-fix-ifr-elf-analysis:
+	$(TM) -e '((@ (tools) elf-analyzer) (@ (bao) bao1x-boot1-lite-fix-ifr))'
+
+alt-boot1-lite-fix-ifr-elf-analysis:
+	$(TM) -e '((@ (tools) elf-analyzer) (@ (bao) bao1x-alt-boot1-lite-fix-ifr))'
 
 baremetal-dabao-elf-analysis:
 	$(TM) -e '((@ (tools) elf-analyzer) (@ (bao) bao1x-baremetal-dabao))'
