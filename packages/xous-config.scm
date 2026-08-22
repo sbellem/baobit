@@ -18,13 +18,13 @@
 
 ;; GitHub owner (user or org)
 (define %xous-owner
-  "betrusted-io")
+  "sbellem")
 (define %xous-git-describe
-  "v0.10.2-beta1-128-gc34c1e3e9")
+  "v0.10.2-beta1-138-g7acdf6a44")
 (define %xous-commit
-  "c34c1e3e988de4680818d14e46327256f4623828")
+  "7acdf6a4421dc8675937f92fe68221b343bd9dca")
 (define %xous-guix-hash
-  "0dms9xz23q60l25djjz8qvr1fx094x2yn6lvr31c5pfi7dzc0ckj")
+  "1bny6sajxq8fkvfjf7581fa56j9903kl0jqrn70m1vhkb29cffad")
 
 ;; Rust toolchain version (e.g., "1.90", "1.91")
 ;; Package modules resolve this to rust-X.YZ
