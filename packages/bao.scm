@@ -572,6 +572,12 @@
                        "bao1x-alt-boot1-lite"
                        #:target-dir "riscv32imac-unknown-none-elf"))
 
+;; Same image as bao1x-alt-boot1-lite, plus the boot1 `fix-ifr` feature.
+(define-public bao1x-alt-boot1-lite-fix-ifr
+  (make-firmware-build "bao1x-alt-boot1-lite-fix-ifr"
+                       "bao1x-alt-boot1-lite --loader-feature fix-ifr"
+                       #:target-dir "riscv32imac-unknown-none-elf"))
+
 (define-public bao1x-baremetal-dabao
   (make-firmware-build "bao1x-baremetal-dabao"
                        "bao1x-baremetal-dabao"
