@@ -24,19 +24,19 @@ jobs:
         timeout-minutes: 120
         uses: ./.github/actions/retry
         with:
-          run: make ROOT=bao1x-${{ matrix.target }} ${{ matrix.target }}
+          run: make ROOT=bao1x-${{ matrix.target }} FALLBACK=1 ${{ matrix.target }}
 
       - name: Check reproducibility
         timeout-minutes: 120
         uses: ./.github/actions/retry
         with:
-          run: make CHECK=1 ${{ matrix.target }}
+          run: make CHECK=1 FALLBACK=1 ${{ matrix.target }}
 
       - name: Generate ELF analysis
         timeout-minutes: 120
         uses: ./.github/actions/retry
         with:
-          run: make ROOT=${{ matrix.target }}-elf-analysis ${{ matrix.target }}-elf-analysis
+          run: make ROOT=${{ matrix.target }}-elf-analysis FALLBACK=1 ${{ matrix.target }}-elf-analysis
 
       - name: Verify ELF analysis matches build
         run: |

@@ -16,6 +16,7 @@ CHANNELS ?= channels/guix.scm
 DRY ?=
 ROOT ?=
 CHECK ?=
+FALLBACK ?=
 
 # Substitute URL definitions
 SUBS_OFFICIAL   := https://ci.guix.gnu.org https://bordeaux.guix.gnu.org
@@ -48,6 +49,9 @@ ifdef DRY
 endif
 ifneq ($(_SUBS),)
   TM += --substitute-urls="$(_SUBS)"
+endif
+ifdef FALLBACK
+  TM += --fallback
 endif
 ifdef ROOT
   TM += --root=$(ROOT)
@@ -96,6 +100,7 @@ help:
 	@echo "  SUBS=none          - disable substitutes (build from source)"
 	@echo "  SUBS='url ...'     - custom substitute URLs"
 	@echo "  ROOT=name          - create GC root with given name"
+	@echo "  FALLBACK=1         - build locally when substitute download fails"
 	@echo "  CHECK=1            - verify reproducibility"
 
 # Rust versions
@@ -137,7 +142,7 @@ alt-boot1-lite:
 bootloader: boot0 boot1 alt-boot1
 
 manifest:
-	guix time-machine --channels=$(CHANNELS) -- build -L packages -m manifest.scm $(if $(DRY),--dry-run) $(if $(_SUBS),--substitute-urls="$(_SUBS)") $(if $(ROOT),--root=$(ROOT)) $(if $(CHECK),--check --keep-failed)
+	guix time-machine --channels=$(CHANNELS) -- build -L packages -m manifest.scm $(if $(DRY),--dry-run) $(if $(_SUBS),--substitute-urls="$(_SUBS)") $(if $(FALLBACK),--fallback) $(if $(ROOT),--root=$(ROOT)) $(if $(CHECK),--check --keep-failed)
 
 baremetal-dabao:
 	$(TM) -e '(@ (bao) bao1x-baremetal-dabao)'
