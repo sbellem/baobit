@@ -20,11 +20,11 @@
 (define %xous-owner
   "betrusted-io")
 (define %xous-git-describe
-  "v0.10.2-beta1-143-g3651498ca")
+  "v0.10.2-beta1-145-g40454f350")
 (define %xous-commit
-  "3651498cada07a29bf42d489f1dfa516aaa05b82")
+  "40454f350958223de4e0ebcaa906d89cdc47e46e")
 (define %xous-guix-hash
-  "1zx6a8g8q94bsfs44ska9xvnln36w2gb7dvifhpwn9xnj5alccbw")
+  "1wnndjqq7nalv2azgqhzz0gadb9rcq7x06jy28xxfx0g3pgzghns")
 
 ;; Rust toolchain version (e.g., "1.90", "1.91")
 ;; Package modules resolve this to rust-X.YZ
