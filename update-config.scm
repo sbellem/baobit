@@ -112,7 +112,10 @@ when the superproject commit has not changed."
         (run-git "fetch" "origin" commit)
         (run-git "-c" "advice.detachedHead=false" "checkout" commit)
         (let* ((describe (if need-describe?
-                             (run-command "git describe --long --abbrev=9")
+                             ;; --tags: upstream release tags are sometimes
+                             ;; lightweight (e.g. v0.10.2-rc1), which plain
+                             ;; git-describe skips over.
+                             (run-command "git describe --tags --long --abbrev=9")
                              #f))
                (hash (run-command "guix hash -rx ."))
                ;; Submodule pins are gitlinks recorded by the superproject.
