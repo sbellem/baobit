@@ -44,8 +44,12 @@
 ;;; =============================================================
 ;;; SOURCE DEFINITION - Fetched via git, fully reproducible
 ;;; =============================================================
+;;; Exported so the exact pinned checkout can be realized on its own:
+;;;   guix build -L packages -e '(@ (bao) xous-core-source)'
+;;; update-bao-crates.sh uses this to read Cargo.lock from the pinned
+;;; commit (no local checkout), and auditors use it to re-fetch the source.
 
-(define xous-core-source
+(define-public xous-core-source
   (origin
     (method git-fetch)
     (uri (git-reference (url (string-append "https://github.com/" %xous-owner
