@@ -20,7 +20,7 @@
 (define %xous-owner
   "betrusted-io")
 (define %xous-git-describe
-  "v0.10.2-beta1-147-g266b15f22")
+  "v0.10.2-rc1-8-g266b15f22")
 (define %xous-commit
   "266b15f227251757dd4e1ce600e2f866e7a70da9")
 (define %xous-guix-hash
