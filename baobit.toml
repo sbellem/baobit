@@ -6,6 +6,7 @@
 # Usage:
 #   1. Edit this file
 #   2. Run: make update-config
+#
 
 [xous-core]
 owner = "betrusted-io"
