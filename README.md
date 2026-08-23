@@ -11,6 +11,11 @@
 Reproducible build toolchain for [Baochip][] firmware. Rebuild from source
 and verify that the firmware on your device matches the public source code.
 
+> [!TIP]
+> **DEFCON 34 Badges**
+>
+> See [VERIFY.md](VERIFY.md#def-con-34-badges) to check the bootloader firmware running on your badge.
+
 ## Prerequisites
 
 Install [GNU Guix](https://guix.gnu.org/manual/1.5.0/en/html_node/Installation.html)
