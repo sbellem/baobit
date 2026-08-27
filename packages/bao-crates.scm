@@ -169,9 +169,9 @@
   (crate-source "az" "1.2.1"
                 "0ww9k1w3al7x5qmb7f13v3s9c2pg1pdxbs8xshqy6zyrchj4qzkv"))
 
-(define rust-bao1x-api-0.1.3
-  (crate-source "bao1x-api" "0.1.3"
-                "0kwv2hida6xpwsj11ba7wkc06f5mnavl0qqy3iaj6vdf6fl3gnmw"))
+(define rust-bao1x-api-0.1.4
+  (crate-source "bao1x-api" "0.1.4"
+                "11xjnn04pv861kn7vppx3qpqwil8raswjbrx8vn9zdrvlw27akrm"))
 
 (define rust-bare-metal-0.2.4
   (crate-source "bare-metal" "0.2.4"
@@ -2797,7 +2797,7 @@
                                  rust-atty-0.2.14
                                  rust-autocfg-1.1.0
                                  rust-az-1.2.1
-                                 rust-bao1x-api-0.1.3
+                                 rust-bao1x-api-0.1.4
                                  rust-bare-metal-0.2.4
                                  rust-base16ct-0.1.1
                                  rust-base16ct-1.0.0
