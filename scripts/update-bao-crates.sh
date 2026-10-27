@@ -17,16 +17,32 @@
 # Usage:  scripts/update-bao-crates.sh
 #
 # Env:
-#   XOUS_SRC  xous-core checkout (default: $HOME/code/baochip/xous-core-dev)
 #   CHANNELS  guix channels file (default: channels/guix.scm)
 #   OUT       output file (default: packages/bao-crates.scm)
+#   XOUS_SRC  override: a local xous-core checkout to import from instead of
+#             the pinned source.  For dev/offline use ONLY -- it defeats
+#             reproducibility.  Leave unset in normal use.
 
 set -euo pipefail
 
-XOUS_SRC="${XOUS_SRC:-$HOME/code/baochip/xous-core-dev}"
 CHANNELS="${CHANNELS:-channels/guix.scm}"
 OUT="${OUT:-packages/bao-crates.scm}"
 TEMPLATE="${TEMPLATE:-scripts/bao-crates.tmpl.scm}"
+
+# Fetch the xous-core source at the commit pinned in xous-config.scm (derived
+# from baobit.toml) by realizing its git-fetch origin directly -- the same
+# reproducible source guix builds the firmware from.  Both Cargo.lock files
+# live inside the resulting store checkout, so the regen never depends on a
+# local working copy.  (Mirrors update-sysroot-crates, which reads the rust
+# fork's library/Cargo.lock the same way.)
+if [ -z "${XOUS_SRC:-}" ]; then
+  echo "=== fetching pinned xous-core source ===" >&2
+  XOUS_SRC=$(guix time-machine --channels="$CHANNELS" -- \
+    build -L packages -e '(@ (bao) xous-core-source)')
+  echo "xous-core source: $XOUS_SRC" >&2
+else
+  echo "warning: using XOUS_SRC override ($XOUS_SRC) -- not reproducible" >&2
+fi
 
 MAIN_LOCK="$XOUS_SRC/Cargo.lock"
 LOCALES_LOCK="$XOUS_SRC/locales/Cargo.lock"
