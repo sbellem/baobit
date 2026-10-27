@@ -589,29 +589,29 @@
   (crate-source "ctutils" "0.4.2"
                 "17m2s9jv7i780k26cq2fcyslg0pakv9plwdrmygdwha1hfiiambx"))
 
-(define rust-curve25519-dalek-4.1.2.16e087a
+(define rust-curve25519-dalek-4.1.2.09635d1
   ;; TODO REVIEW: Define standalone package if this is a workspace.
   (origin
     (method git-fetch)
     (uri (git-reference
           (url "https://github.com/betrusted-io/curve25519-dalek.git")
-          (commit "16e087ab969a5d3f4099fddca97ac6dbba82bd66")))
-    (file-name (git-file-name "rust-curve25519-dalek" "4.1.2.16e087a"))
-    (sha256 (base32 "05vqdg88assma2c4myh8vnhs99vc7ng01f8dmaxn6hbcjqi9n3d4"))))
+          (commit "09635d12de83b76f6464db621e9d22f91fdff688")))
+    (file-name (git-file-name "rust-curve25519-dalek" "4.1.2.09635d1"))
+    (sha256 (base32 "020gab2px3nriw6anrnfqfafj2zhp4m2rhkrf19jz5gr0sb1xxp5"))))
 
 (define rust-curve25519-dalek-derive-0.1.1
   (crate-source "curve25519-dalek-derive" "0.1.1"
                 "1cry71xxrr0mcy5my3fb502cwfxy6822k4pm19cwrilrg7hq4s7l"))
 
-(define rust-curve25519-dalek-derive-0.1.1.16e087a
+(define rust-curve25519-dalek-derive-0.1.1.09635d1
   ;; TODO REVIEW: Define standalone package if this is a workspace.
   (origin
     (method git-fetch)
     (uri (git-reference
           (url "https://github.com/betrusted-io/curve25519-dalek.git")
-          (commit "16e087ab969a5d3f4099fddca97ac6dbba82bd66")))
-    (file-name (git-file-name "rust-curve25519-dalek-derive" "0.1.1.16e087a"))
-    (sha256 (base32 "05vqdg88assma2c4myh8vnhs99vc7ng01f8dmaxn6hbcjqi9n3d4"))))
+          (commit "09635d12de83b76f6464db621e9d22f91fdff688")))
+    (file-name (git-file-name "rust-curve25519-dalek-derive" "0.1.1.09635d1"))
+    (sha256 (base32 "020gab2px3nriw6anrnfqfafj2zhp4m2rhkrf19jz5gr0sb1xxp5"))))
 
 (define rust-darling-0.13.4
   (crate-source "darling" "0.13.4"
@@ -2033,15 +2033,15 @@
   (crate-source "sha1" "0.10.6"
                 "1fnnxlfg08xhkmwf2ahv634as30l1i3xhlhkvxflmasi5nd85gz3"))
 
-(define rust-sha2-0.10.8.161da48
+(define rust-sha2-0.10.8.8e7051d
   ;; TODO REVIEW: Define standalone package if this is a workspace.
   (origin
     (method git-fetch)
     (uri (git-reference
           (url "https://github.com/betrusted-io/hashes.git")
-          (commit "161da48eb94ba61108634b240a1f30f185779a37")))
-    (file-name (git-file-name "rust-sha2" "0.10.8.161da48"))
-    (sha256 (base32 "1r86mq3jildaaw6xhdm9fpl8b61sj93avyqy18pc1rlrxxj657vk"))))
+          (commit "8e7051db0af8625f74e209732cb9f07436d77bf8")))
+    (file-name (git-file-name "rust-sha2" "0.10.8.8e7051d"))
+    (sha256 (base32 "0za14s01c49530j29vgyvsd9qryc570s9wjdib0k7xcfdjim9186"))))
 
 (define rust-sha2-0.11.0
   (crate-source "sha2" "0.11.0"
@@ -2651,29 +2651,29 @@
   (crate-source "xml-rs" "0.8.19"
                 "0nnpvk3fv32hgh7vs9gbg2swmzxx5yz73f4b7rak7q39q2x9rjqg"))
 
-(define rust-xous-0.9.70
-  (crate-source "xous" "0.9.70"
-                "1y3nipz7xj7zmz2ikc22z3wsc5cp83jw2pbrzby98gk28akf0xl0"))
+(define rust-xous-0.9.71
+  (crate-source "xous" "0.9.71"
+                "14zz006xqgarslvm68rxs2p75b2dijs7rf08x3pz79qc70dqygv7"))
 
-(define rust-xous-api-log-0.1.69
-  (crate-source "xous-api-log" "0.1.69"
-                "15gflydag57hw62jv9l8bcywrmzrkz9abw59fzrd4ic2nrpg006c"))
+(define rust-xous-api-log-0.1.70
+  (crate-source "xous-api-log" "0.1.70"
+                "0lj8b6iqhy73fb51yr2b93a2p0j38z78a8n5mgfi0qfiiisnnvka"))
 
-(define rust-xous-api-names-0.9.71
-  (crate-source "xous-api-names" "0.9.71"
-                "0lh1759sm68g21rnw6jc33cpqy0923zh39x5nkszxpnpmfslx2lr"))
+(define rust-xous-api-names-0.9.72
+  (crate-source "xous-api-names" "0.9.72"
+                "1d71i0mz124k605gwddvhg9h2rf76fx1cwljz73nj0m5mj3ai84i"))
 
-(define rust-xous-api-susres-0.9.68
-  (crate-source "xous-api-susres" "0.9.68"
-                "1c2irky7sl5nngxh7ifiwxjpxilx8ymap5slydx630pfm8p2av0i"))
+(define rust-xous-api-susres-0.9.69
+  (crate-source "xous-api-susres" "0.9.69"
+                "1vwfjvckwrq2s1pj3gk8sz6jddpqrjw12dp4cy8q2m0bzxq0nckm"))
 
-(define rust-xous-api-ticktimer-0.9.70
-  (crate-source "xous-api-ticktimer" "0.9.70"
-                "1783hpl3wyqsk9xlivpns21h9yi781a2hf77k5zsz363qf9hm879"))
+(define rust-xous-api-ticktimer-0.9.71
+  (crate-source "xous-api-ticktimer" "0.9.71"
+                "0d3jmzv86539znic2xgkxamsqzn9v0650b3y3vy6b80k6v1wrwka"))
 
-(define rust-xous-ipc-0.10.10
-  (crate-source "xous-ipc" "0.10.10"
-                "0c214b44lpqdabkhj7zh66pyii0m34rb0ym0x7ybp959y6ga7pkp"))
+(define rust-xous-ipc-0.10.11
+  (crate-source "xous-ipc" "0.10.11"
+                "1nyyh88g4i1mnxm9fvalcvpwx56qzmwxfz1qs8i8waf743z75wwb"))
 
 (define rust-xous-ipc-0.9.63
   (crate-source "xous-ipc" "0.9.63"
@@ -2901,9 +2901,9 @@
                                  rust-ctr-0.9.2
                                  rust-ctr-0.10.1
                                  rust-ctutils-0.4.2
-                                 rust-curve25519-dalek-4.1.2.16e087a
+                                 rust-curve25519-dalek-4.1.2.09635d1
                                  rust-curve25519-dalek-derive-0.1.1
-                                 rust-curve25519-dalek-derive-0.1.1.16e087a
+                                 rust-curve25519-dalek-derive-0.1.1.09635d1
                                  rust-darling-0.13.4
                                  rust-darling-0.20.5
                                  rust-darling-core-0.13.4
@@ -3242,7 +3242,7 @@
                                  rust-serde-with-macros-1.5.2
                                  rust-serdect-0.4.3
                                  rust-sha1-0.10.6
-                                 rust-sha2-0.10.8.161da48
+                                 rust-sha2-0.10.8.8e7051d
                                  rust-sha2-0.11.0
                                  rust-sha3-0.10.8
                                  rust-shake-0.1.0
@@ -3387,13 +3387,13 @@
                                  rust-xcursor-0.3.5
                                  rust-xmas-elf-0.9.1
                                  rust-xml-rs-0.8.19
-                                 rust-xous-0.9.70
-                                 rust-xous-api-log-0.1.69
-                                 rust-xous-api-names-0.9.71
-                                 rust-xous-api-susres-0.9.68
-                                 rust-xous-api-ticktimer-0.9.70
+                                 rust-xous-0.9.71
+                                 rust-xous-api-log-0.1.70
+                                 rust-xous-api-names-0.9.72
+                                 rust-xous-api-susres-0.9.69
+                                 rust-xous-api-ticktimer-0.9.71
                                  rust-xous-ipc-0.9.63
-                                 rust-xous-ipc-0.10.10
+                                 rust-xous-ipc-0.10.11
                                  rust-xous-riscv-0.5.6
                                  rust-xous-semver-0.1.6
                                  rust-xous-tts-backend-0.1.6

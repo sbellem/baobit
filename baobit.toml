@@ -9,7 +9,7 @@
 
 [xous-core]
 owner = "betrusted-io"
-commit = "afa89859512d17bc7a01e192d471cb6678f067ba"
+commit = "e8d989c754bcc3a9cd66f9e3e1c70cac580731eb"
 
 [rust-xous]
 version = "1.96"
