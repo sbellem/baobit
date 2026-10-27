@@ -63,6 +63,10 @@
   (crate-source "libc" "0.2.178"
                 "1490yks6mria93i3xdva1gm05cjz824g14mbv0ph32lxma6kvj9p"))
 
+(define rust-libc-0.2.183
+  (crate-source "libc" "0.2.183"
+                "17c9gyia7rrzf9gsssvk3vq9ca2jp6rh32fsw6ciarpn5djlddmm"))
+
 (define rust-memchr-2.7.6
   (crate-source "memchr" "2.7.6"
                 "0wy29kf6pb4fbhfksjbs05jy2f32r2f3r1ga6qkmpz31k79h0azm"))
@@ -106,6 +110,10 @@
 (define rust-rustc-demangle-0.1.26
   (crate-source "rustc-demangle" "0.1.26"
                 "1kja3nb0yhlm4j2p1hl8d7sjmn2g9fa1s4pj0qma5kj2lcndkxsn"))
+
+(define rust-rustc-demangle-0.1.27
+  (crate-source "rustc-demangle" "0.1.27"
+                "17f0jl6lgsy8kwxdzxp3s2wmipvlpna03kkc4vkqr1gwv5lqh2xm"))
 
 (define rust-rustc-literal-escaper-0.0.5
   (crate-source "rustc-literal-escaper" "0.0.5"
@@ -203,7 +211,7 @@
                                     rust-gimli-0.32.3
                                     rust-hashbrown-0.16.1
                                     rust-hermit-abi-0.5.2
-                                    rust-libc-0.2.178
+                                    rust-libc-0.2.183
                                     rust-memchr-2.7.6
                                     rust-miniz-oxide-0.8.9
                                     rust-moto-rt-0.16.0
@@ -213,7 +221,7 @@
                                     rust-rand-0.9.2
                                     rust-rand-core-0.9.3
                                     rust-rand-xorshift-0.4.0
-                                    rust-rustc-demangle-0.1.26
+                                    rust-rustc-demangle-0.1.27
                                     rust-rustc-literal-escaper-0.0.7
                                     rust-shlex-1.3.0
                                     rust-unwinding-0.2.8

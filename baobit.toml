@@ -12,5 +12,5 @@ owner = "betrusted-io"
 commit = "afa89859512d17bc7a01e192d471cb6678f067ba"
 
 [rust-xous]
-version = "1.94"
-commit = "fa8d53c5ed77e1707686acf94b0569cbed37696b"
+version = "1.96"
+commit = "a48a2a994bfc528906b2b8a5dad810d321a10791"
