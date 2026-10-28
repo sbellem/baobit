@@ -29,23 +29,23 @@
 ;; Rust toolchain version (e.g., "1.90", "1.91")
 ;; Package modules resolve this to rust-X.YZ
 (define %rust-version
-  "1.96")
+  "1.98")
 
 ;; betrusted-io/rust fork for Xous sysroot
 ;; Must match %rust-version (e.g., 1.90.0-xous branch)
 (define %rust-xous-commit
-  "a48a2a994bfc528906b2b8a5dad810d321a10791")
+  "fa073879ac5f01760105eec51f51e0c5028bb599")
 (define %rust-xous-guix-hash
-  "0sbjaaqjvl72hsm7jq4bbfabpch3za441yqispcqjajv5l5p8sn4")
+  "1nrqw0gniygjnh0r51i9f9j89857qd87ds3llfv3vbgfpp9pm01c")
 
 ;; betrusted-io/rust submodule pins (compiler-rt + backtrace).
 ;; Commits are the fork's gitlinks (src/llvm-project, library/backtrace);
 ;; hashes are `guix hash -rx` of those checkouts.  Derived by update-config.scm.
 (define %llvm-compiler-rt-commit
-  "1cb4e3833c1919c2e6fb579a23ac0e2b22587b7e")
+  "52ed14fcd56afc30f9cccd8ca8ce237c2eef7e04")
 (define %llvm-compiler-rt-guix-hash
-  "0sm4qly2a1mxg9zw8ym1vynsdpsi7spf030ilyaqfq4a20z3w6q0")
+  "1pqf0ac708wszzlmxy0dqvnn77bqa0ywwxbllcmwqk55byg6hnap")
 (define %backtrace-rs-commit
-  "28ec93b503bf0410745bc3d571bf3dc1caac3019")
+  "d902726a1dcdc1e1c66f73d1162181b5423c645b")
 (define %backtrace-rs-guix-hash
-  "1vbqd5i1znqik5r5ai0gl77dib3svfyl1i66ywhzyvaz1ch2mxvy")
+  "0apqspyjw96l83ngng1m462b2g97yla935wsbk8pdarvfzprik1h")

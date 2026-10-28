@@ -31,6 +31,10 @@
   (crate-source "dlmalloc" "0.2.11"
                 "0c7sygw9dlczgjkk6kvp2sxrz81zc51rgrycah69kp8n1csgxk86"))
 
+(define rust-dlmalloc-0.2.13
+  (crate-source "dlmalloc" "0.2.13"
+                "15720zjjl4pmpl9sdn7qr6r9mn2blr4yah1chf6rivl5gz0h2nwz"))
+
 (define rust-foldhash-0.2.0
   (crate-source "foldhash" "0.2.0"
                 "1nvgylb099s11xpfm1kn2wcsql080nqmnhj1l25bp3r2b35j9kkp"))
@@ -51,6 +55,10 @@
   (crate-source "hashbrown" "0.16.1"
                 "004i3njw38ji3bzdp9z178ba9x3k0c1pgy8x69pj7yfppv4iq7c4"))
 
+(define rust-hashbrown-0.17.1
+  (crate-source "hashbrown" "0.17.1"
+                "0jmqz7i4yl6cm7rbn0i2ffkfrmwi6xkmzkaldr2v8bcsx2v0jngd"))
+
 (define rust-hermit-abi-0.5.2
   (crate-source "hermit-abi" "0.5.2"
                 "1744vaqkczpwncfy960j2hxrbjl1q01csm84jpd9dajbdr2yy3zw"))
@@ -66,6 +74,10 @@
 (define rust-libc-0.2.183
   (crate-source "libc" "0.2.183"
                 "17c9gyia7rrzf9gsssvk3vq9ca2jp6rh32fsw6ciarpn5djlddmm"))
+
+(define rust-libc-0.2.185
+  (crate-source "libc" "0.2.185"
+                "13rbdaa59l3w92q7kfcxx8zbikm99zzw54h59aqvcv5wx47jrzsj"))
 
 (define rust-memchr-2.7.6
   (crate-source "memchr" "2.7.6"
@@ -123,6 +135,10 @@
   (crate-source "rustc-literal-escaper" "0.0.7"
                 "165id4v4qz2awa7lq2xi1hv41zfwv7nch7b8w1k79ns0ksxpms4b"))
 
+(define rust-rustc-literal-escaper-0.0.8
+  (crate-source "rustc-literal-escaper" "0.0.8"
+                "07pp0p3rg48xf3fza1ypk1dcyf1l74h59gdabfwqz335zc9z5rmz"))
+
 (define rust-shlex-1.3.0
   (crate-source "shlex" "1.3.0"
                 "0r1y6bv26c1scpxvhg2cabimrmwgbp4p3wy6syj9n0c4s3q2znhg"))
@@ -142,6 +158,18 @@
 (define rust-wasi-0.14.4+wasi-0.2.4
   (crate-source "wasi" "0.14.4+wasi-0.2.4"
                 "0jpcy0qg3bvsclwyk1d11r3isd320rpickrl5hy9rx7s4jjg99c8"))
+
+(define rust-wasip1-1.0.0
+  (crate-source "wasip1" "1.0.0"
+                "0q67ikn8yxhnm3a8gmqz54ig0hpvy4f3iw5qpryka9369116iqmm"))
+
+(define rust-wasip2-1.0.3+wasi-0.2.9
+  (crate-source "wasip2" "1.0.3+wasi-0.2.9"
+                "1mi3w855dz99xzjqc4aa8c9q5b6z1y5c963pkk4cvmr6vdr4c1i0"))
+
+(define rust-wasip3-0.6.0+wasi-0.3.0-rc-2026-03-15
+  (crate-source "wasip3" "0.6.0+wasi-0.3.0-rc-2026-03-15"
+                "1nd3lzx1lf9mgwxj8j9v17jrfagsa535wdn0k0cmif50srnlb0zd"))
 
 (define rust-windows-link-0.2.1
   (crate-source "windows-link" "0.2.1"
@@ -191,6 +219,10 @@
   (crate-source "wit-bindgen" "0.45.1"
                 "0dndrimz95nwdv6m24ylj0vj1dvlc012xxrxs13mc1r5y5qk8msw"))
 
+(define rust-wit-bindgen-0.57.1
+  (crate-source "wit-bindgen" "0.57.1"
+                "0vjk2jb593ri9k1aq4iqs2si9mrw5q46wxnn78im7hm7hx799gqy"))
+
 (define ssss-separator 'end-of-crates)
 
 
@@ -198,45 +230,36 @@
 ;;; Cargo inputs.
 ;;;
 
-(define-cargo-inputs lookup-cargo-inputs
-                     (sysroot =>
-                              (list rust-addr2line-0.25.1
-                                    rust-adler2-2.0.1
-                                    rust-cc-1.2.0
-                                    rust-cfg-if-1.0.4
-                                    rust-dlmalloc-0.2.11
-                                    rust-foldhash-0.2.0
-                                    rust-fortanix-sgx-abi-0.6.1
-                                    rust-getopts-0.2.24
-                                    rust-gimli-0.32.3
-                                    rust-hashbrown-0.16.1
-                                    rust-hermit-abi-0.5.2
-                                    rust-libc-0.2.183
-                                    rust-memchr-2.7.6
-                                    rust-miniz-oxide-0.8.9
-                                    rust-moto-rt-0.16.0
-                                    rust-object-0.37.3
-                                    rust-r-efi-5.3.0
-                                    rust-r-efi-alloc-2.1.0
-                                    rust-rand-0.9.2
-                                    rust-rand-core-0.9.3
-                                    rust-rand-xorshift-0.4.0
-                                    rust-rustc-demangle-0.1.27
-                                    rust-rustc-literal-escaper-0.0.7
-                                    rust-shlex-1.3.0
-                                    rust-unwinding-0.2.8
-                                    rust-vex-sdk-0.27.1
-                                    rust-wasi-0.11.1+wasi-snapshot-preview1
-                                    rust-wasi-0.14.4+wasi-0.2.4
-                                    rust-windows-link-0.2.1
-                                    rust-windows-sys-0.60.2
-                                    rust-windows-targets-0.53.5
-                                    rust-windows-aarch64-gnullvm-0.53.1
-                                    rust-windows-aarch64-msvc-0.53.1
-                                    rust-windows-i686-gnu-0.53.1
-                                    rust-windows-i686-gnullvm-0.53.1
-                                    rust-windows-i686-msvc-0.53.1
-                                    rust-windows-x86-64-gnu-0.53.1
-                                    rust-windows-x86-64-gnullvm-0.53.1
-                                    rust-windows-x86-64-msvc-0.53.1
-                                    rust-wit-bindgen-0.45.1)))
+(define-cargo-inputs
+ lookup-cargo-inputs
+ (sysroot =>
+          (list rust-addr2line-0.25.1
+                rust-adler2-2.0.1
+                rust-cc-1.2.0
+                rust-cfg-if-1.0.4
+                rust-dlmalloc-0.2.13
+                rust-foldhash-0.2.0
+                rust-fortanix-sgx-abi-0.6.1
+                rust-getopts-0.2.24
+                rust-gimli-0.32.3
+                rust-hashbrown-0.17.1
+                rust-hermit-abi-0.5.2
+                rust-libc-0.2.185
+                rust-memchr-2.7.6
+                rust-miniz-oxide-0.8.9
+                rust-moto-rt-0.16.0
+                rust-object-0.37.3
+                rust-r-efi-5.3.0
+                rust-r-efi-alloc-2.1.0
+                rust-rand-0.9.2
+                rust-rand-core-0.9.3
+                rust-rand-xorshift-0.4.0
+                rust-rustc-demangle-0.1.27
+                rust-rustc-literal-escaper-0.0.8
+                rust-shlex-1.3.0
+                rust-unwinding-0.2.8
+                rust-vex-sdk-0.27.1
+                rust-wasip1-1.0.0
+                rust-wasip2-1.0.3+wasi-0.2.9
+                rust-wasip3-0.6.0+wasi-0.3.0-rc-2026-03-15
+                rust-wit-bindgen-0.57.1)))
