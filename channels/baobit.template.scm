@@ -6,8 +6,8 @@
 (list (channel
         (name 'guix)
         (url "https://codeberg.org/guix/guix.git")
-        (branch "master")
-        (commit "fa73e816fdeadfc29c388b7892f7ce41028dd56e")
+        (branch "rust-team")
+        (commit "e55929f3c2e15ef8aff893e33ab553fee567d2e2")
         (introduction
          (make-channel-introduction
           "9edb3f66fd807b096b48283debdcddccfea34bad"
