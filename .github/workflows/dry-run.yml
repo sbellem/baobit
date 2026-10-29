@@ -2,9 +2,9 @@ name: Dry-run builds
 
 on:
   push:
-    branches: [main]
+    branches: [main, rust-team]
   pull_request:
-    branches: [main]
+    branches: [main, rust-team]
   workflow_dispatch:
 
 jobs:

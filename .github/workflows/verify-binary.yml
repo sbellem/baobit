@@ -2,9 +2,9 @@ name: Build and run verify-binary
 
 on:
   push:
-    branches: [main]
+    branches: [main, rust-team]
   pull_request:
-    branches: [main]
+    branches: [main, rust-team]
   workflow_dispatch:
 
 jobs:
