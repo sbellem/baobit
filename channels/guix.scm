@@ -7,8 +7,9 @@
 ;;
 ;; This baobit branch (rust-team) pins guix's rust-team branch, which carries
 ;; newer Rust series (rust-1.97, rust-1.98) before they reach master; baobit
-;; main stays on guix master.  The pinned commit is main's master pin
-;; (fa73e816fde) plus the rust-team queue, so only the Rust stack differs.
+;; main stays on guix master.  The pin is a rust-team head: a guix master
+;; commit plus the rust-team queue, so relative to main's master pin only
+;; the Rust stack (and master's own drift) differs.
 ;; Maintenance: rebase this branch onto main whenever main moves; when guix
 ;; merges rust-team into master, bump main to that master commit and reset
 ;; this branch on top of it.  Upstream rebases rust-team, so an old pin may
@@ -18,7 +19,7 @@
         (name 'guix)
         (url "https://codeberg.org/guix/guix.git")
         (branch "rust-team")
-        (commit "e55929f3c2e15ef8aff893e33ab553fee567d2e2")
+        (commit "11a833db3f00042d0dcfd23bca1fbc51e741a822")
         (introduction
          (make-channel-introduction "9edb3f66fd807b096b48283debdcddccfea34bad"
           (openpgp-fingerprint

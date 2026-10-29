@@ -5,7 +5,7 @@
         (name 'guix)
         (url "https://git.savannah.gnu.org/git/guix.git")
         (branch "rust-team")
-        (commit "e55929f3c2e15ef8aff893e33ab553fee567d2e2")
+        (commit "11a833db3f00042d0dcfd23bca1fbc51e741a822")
         (introduction
          (make-channel-introduction "9edb3f66fd807b096b48283debdcddccfea34bad"
           (openpgp-fingerprint
