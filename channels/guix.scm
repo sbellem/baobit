@@ -5,12 +5,14 @@
 ;; different mirror) so a single flaky host does not block a release.  Keep
 ;; the commit identical in both and in channels/baobit.template.scm.
 ;;
-;; Pinned to the rust-team branch, not master: master caps the Rust series at
-;; rust-1.96, rust-team adds rust-1.97 and rust-1.98.  The pinned commit is
-;; master@fa73e816fde (the previous pin) plus the 49-commit rust-team queue,
-;; so nothing outside the Rust stack moves.  Go back to master once rust-team
-;; is merged there; the branch is rebased, so this commit may eventually stop
-;; being reachable from the branch head.
+;; This baobit branch (rust-team) pins guix's rust-team branch, which carries
+;; newer Rust series (rust-1.97, rust-1.98) before they reach master; baobit
+;; main stays on guix master.  The pinned commit is main's master pin
+;; (fa73e816fde) plus the rust-team queue, so only the Rust stack differs.
+;; Maintenance: rebase this branch onto main whenever main moves; when guix
+;; merges rust-team into master, bump main to that master commit and reset
+;; this branch on top of it.  Upstream rebases rust-team, so an old pin may
+;; stop being reachable from the branch head.
 
 (list (channel
         (name 'guix)

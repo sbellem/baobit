@@ -115,6 +115,18 @@ prepare a new release:
    ```
 4. Tag and push to trigger the release workflow.
 
+## Branches
+
+| Branch | Guix channel pin | Purpose |
+|--------|------------------|---------|
+| `main` | guix `master` | Release branch; builds with the newest Rust series on guix master |
+| `rust-team` | guix `rust-team` | Tracks guix's rust-team branch to build with newer Rust before it reaches master |
+
+Both branches share the same `make` targets; the Rust series each one builds
+with is recorded in `baobit.toml`. `rust-team` is rebased onto `main` whenever
+`main` moves. When guix merges rust-team into master, `main` bumps its guix pin
+to that master commit and `rust-team` is reset on top of it.
+
 ## Packages
 
 This Guix channel provides packages for all [Baochip][] firmware components.
