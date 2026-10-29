@@ -1,9 +1,8 @@
 ;; Channels configuration for baobit
 ;; Usage: guix time-machine --channels=channels/guix.scm -- build -L packages bao1x-boot0
 ;;
-;; CI builds against this file and channels/guix-savannah.scm (same commit,
-;; different mirror) so a single flaky host does not block a release.  Keep
-;; the commit identical in both and in channels/baobit.template.scm.
+;; CI builds against this file.  Keep the commit identical here and in
+;; channels/baobit.template.scm.
 
 (list (channel
         (name 'guix)
